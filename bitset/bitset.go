@@ -77,7 +77,6 @@ func BlockAND(b1 Block, b2 Block) (Block) {
 }
 
 func BlockDOT(b1 Block, b2 Block) (bool) {
-
 	return ParityOfBits(BlockAND(b1, b2))
 }
 
@@ -96,6 +95,5 @@ func BlockFlipTopBit(b Block) Block {
 }
 
 func BlockMoreOnes(b Block) bool {
-	// fmt.Println("------>", SumOfBits(b), (uint(len(b)) * INTSIZE))
 	return (2*SumOfBits(b) / (uint(len(b)) * INTSIZE)) >= 1
 }
