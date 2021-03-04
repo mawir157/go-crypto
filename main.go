@@ -2,40 +2,24 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"time"
 )
 
-import BS "./bitset"
-import CB "./combinatorics"
+import BS  "./bitset"
+import CB  "./combinatorics"
+import TIO "./textio"
 
-func AlternatingVector(run, n uint) (v []uint8) {
-	ui8 := uint8(0)
-	runcount := uint(0)
-	runflag := true
-	for i := uint(0); i < n; i++ {
-		if runflag {
-			ui8 |= 1
-		}
-
-		if (i % BS.INTSIZE) == (BS.INTSIZE - 1) {
-			v = append(v, ui8)
-			ui8 = 0
-		}
-		ui8 <<= 1
-
-		runcount += 1
-		if runcount == run {
-			runflag = !runflag
-			runcount = 0
-		}
-	}
-	return 
+type RMCode struct {
+	r,m      uint
+	inBits   uint
+	outBits  uint
+	M        []BS.Block
+	diffs    [][]uint
 }
 
-func GetCharVectors(rm []BS.Block, indices []uint) (chars []BS.Block) {
-	n := len(rm[0]) 
+func GetCharVectors(rm RMCode, row int) (chars []BS.Block) {
+	n := len(rm.M[0])  // probably 2^rm.m
 	initial := make(BS.Block, n)
 	ones    := make(BS.Block, n)
 	for i := 0; i < n; i++ {
@@ -45,8 +29,8 @@ func GetCharVectors(rm []BS.Block, indices []uint) (chars []BS.Block) {
 
 	chars = []BS.Block{initial}
 
-	for _, index := range indices {
-		fold := rm[index] // grab the ith row of the r-m matrix
+	for _, index := range rm.diffs[row] {
+		fold := rm.M[index] // grab the ith row of the r-m matrix
 		notFold := BS.InvertBits(fold) //
 
 		temp := []BS.Block{}
@@ -60,9 +44,11 @@ func GetCharVectors(rm []BS.Block, indices []uint) (chars []BS.Block) {
 	return
 }
 
-func ReedMuller(r uint, m uint) (rm []BS.Block, diffs [][]uint) {
+func ReedMuller(r uint, m uint) RMCode {
 	k := uint(0)
-	n := uint(math.Pow(2, float64(m)))
+	n := uint(1 << m)
+	rm := []BS.Block{}
+	diffs := [][]uint{}
 	for i := uint(0); i <= r; i++ {
 		k += CB.Choose(m, i)
 	}
@@ -72,7 +58,7 @@ func ReedMuller(r uint, m uint) (rm []BS.Block, diffs [][]uint) {
 
 	for i := n; i > 0; i = i / 2 {
 		indices = append(indices, []uint{counter})
-		rm = append(rm, AlternatingVector(i, n))
+		rm = append(rm, CB.AlternatingVector(i, n))
 
 		counter++ 
 	}
@@ -92,13 +78,30 @@ func ReedMuller(r uint, m uint) (rm []BS.Block, diffs [][]uint) {
 	}
 
 	diffs = CB.InvertIndices(m, indices)
+	inBits  := k
+	outBits := uint(1 << m)
 	
-	return
+	return RMCode{r:r, m:m, M:rm, diffs:diffs, inBits:inBits, outBits:outBits}
 }
 
-func ReedMullerEncrypt(rm []BS.Block, msg []uint8) (ctxt BS.Block) {
-	N := uint(len(rm)) // the number of bit in each plaintext Block
-	P := len(rm[0])
+func SanityCheck(rm RMCode) {
+	for i, row1 := range rm.M {
+		for j, row2 := range rm.M {
+			if i == j {
+				continue
+			}
+
+			dot := BS.BlockDOT(row1, row2)
+			if (dot) {
+				fmt.Printf("Bad [%d, %d]\n", i, j)
+			}
+		}
+	}
+}
+
+func ReedMullerEncrypt(rm RMCode, msg []uint8) (ctxt BS.Block) {
+	N := rm.inBits // the number of bit in each plaintext Block
+	P := rm.outBits / BS.INTSIZE // the number of bytes in each cipher text block
 
 	row := uint(0)
 
@@ -108,8 +111,9 @@ func ReedMullerEncrypt(rm []BS.Block, msg []uint8) (ctxt BS.Block) {
 		for bit := uint(0); bit < BS.INTSIZE; bit++ {
 			t := byte & 1
 			if t == 1 {
-				cipherBlock = BS.BlockXOR(cipherBlock, rm[row])
+				cipherBlock = BS.BlockXOR(cipherBlock, rm.M[row])
 			} else {
+			
 			}
 			byte >>= 1
 			row += 1
@@ -124,102 +128,23 @@ func ReedMullerEncrypt(rm []BS.Block, msg []uint8) (ctxt BS.Block) {
 
 	return
 }
-/*
-func ReedMullerDecrypt2(rm []BS.Block, diffs [][]uint, msg []uint8) (ptxt BS.Block) {
-	p := len(rm[0])
 
-	charVectors := [][]BS.Block{}
-	for i := 0; i < len(rm); i++ {
-		charVectors = append(charVectors, GetCharVectors(rm, diffs[i]))
-	}
-
-	for i := 0; i < len(msg); i += P {
-		eword := make(BS.Block, P)
-		copy(eword, msg[i:i+P])
-
-		word := make(BS.Block, len(group))
-		copy(word, eword)
-
-		coeffs := make([]uint, len(rm))
-
-		// compare this block to char vectors for each index
-		// iterate backwards through charVectors
-		for j := len(charVectors) - 1; j >= 1; j-- {
-			chrVecs := charVectors[j]
-			votesForOne := uint(0)
-			for _, cv := range chrVecs {
-				if BS.BlockDOT(cv, eword) {
-					votesForOne += 1
-				}
-			}
-
-			if votesForOne > uint(len(charVectors[j]) - votesForOne) {
-				groupTemp = BS.BlockXOR(rm[j], groupTemp)
-				coeffs[j] = 1
-			} 
-
-			// we are moving to larger degree
-			if len(diffs[j]) != len(diffs[j-1]) {
-				fmt.Print("[", len(diffs[j]), "]")
-				// group = groupTemp
-				copy(group, groupTemp)
-			}
-		}
-	}
-
-
-	row = self.k - 1
-	word = [-1] * self.k
-
-	for degree in range(self.r, -1, -1):
-	    # We calculate the entries for the degree. We need the range of rows of the code matrix
-	    # corresponding to degree r.
-	    upper_r = self.row_indices_by_degree[degree]
-	    lower_r = 0 if degree == 0 else self.row_indices_by_degree[degree - 1] + 1
-
-	    # Now iterate over these rows to determine the value of word for positions lower_r
-	    # through upper_r inclusive.
-	    for pos in range(lower_r, upper_r + 1):
-	        # We vote for the value of this position based on the vectors in voting_rows.
-	        votes = [_dot_product(eword, vrow) % 2 for vrow in self.voting_rows[pos]]
-
-	        # If there is a tie, there is nothing we can do.
-	        if votes.count(0) == votes.count(1):
-	            return None
-
-	        # Otherwise, we set the position to the winner.
-	        word[pos] = 0 if votes.count(0) > votes.count(1) else 1
-
-	    # Now we need to modify the word. We want to calculate the product of what we just
-	    # voted on with the rows of the matrix.
-	    # QUESTION: do we JUST do this with what we've calculated (word[lower_r] to word[upper_r]),
-	    #           or do we do it with word[lower_r] to word[k-1]?
-	    s = [_dot_product(word[lower_r:upper_r + 1], column[lower_r:upper_r + 1]) % 2 for column in self.M]
-	    eword = _vector_reduce(_vector_add(eword, s), 2)
-
-	# We have now decoded.
-	return word
-}
-*/
-
-
-func ReedMullerDecrypt(rm []BS.Block, diffs [][]uint, msg []uint8) (ptxt BS.Block) {
-	P := len(rm[0]) // the number of bytes in each ciphertext block
-
+func ReedMullerDecrypt(rm RMCode, msg []uint8) (ptxt BS.Block) {
+	P := int(rm.outBits / BS.INTSIZE) // the number of bytes in each cipher text block
+fmt.Println("Stepping through ", len(msg), " in steps of ", P)
 	// get the characteristic
 	charVectors := [][]BS.Block{}
-	for i := 0; i < len(rm); i++ {
-		charVectors = append(charVectors, GetCharVectors(rm, diffs[i]))
+	for i := 0; i < len(rm.M); i++ {
+		charVectors = append(charVectors, GetCharVectors(rm, i))
 	}
 
 	for i := 0; i < len(msg); i += P {
 		eword := make(BS.Block, P)
 		copy(eword, msg[i:i+P])
-		// group := msg[i:i+P]
 		ewordTemp := make(BS.Block, len(eword))
 		copy(ewordTemp, eword)
 
-		coeffs := make([]uint, len(rm))
+		coeffs := make([]uint, len(rm.M))
 
 		// compare this block to char vectors for each index
 		// iterate backwards through charVectors
@@ -230,21 +155,23 @@ func ReedMullerDecrypt(rm []BS.Block, diffs [][]uint, msg []uint8) (ptxt BS.Bloc
 				if BS.BlockDOT(cv, eword) {
 					votesForOne += 1
 				}
-				// fmt.Println(ewordTemp)
 			}
-			// coeffs[j] = votesForOne
-
 
 			if votesForOne > uint(len(charVectors[j])) - votesForOne {
-				ewordTemp = BS.BlockXOR(rm[j], ewordTemp)
+				fmt.Print(">")
+				ewordTemp = BS.BlockXOR(rm.M[j], ewordTemp)
 				coeffs[j] = 1
 			} 
 
-			if (j == 0) || (len(diffs[j]) != len(diffs[j-1])) {
-				fmt.Print("[", len(diffs[j]), "]")
+			if (j == 0) || (len(rm.diffs[j]) != len(rm.diffs[j-1])) {
+				fmt.Print("[", len(rm.diffs[j]), "]")
+				fmt.Print(" ~ ", eword)
 				copy(eword, ewordTemp)
+				fmt.Print(" ----> ", eword)
+				fmt.Printf("<%d>\n", BS.SumOfBits(eword))
+
 				// fmt.Println("*", coeffs, eword)
-				// groupTemp = make(BS.Block, len(eword))
+				// ewordTemp = make(BS.Block, len(eword))
 			}
 		}
 		fmt.Println("eword----->", eword)
@@ -264,6 +191,7 @@ func ReedMullerDecrypt(rm []BS.Block, diffs [][]uint, msg []uint8) (ptxt BS.Bloc
 				i++
 			}
 			plainTextBlock = append(plainTextBlock, byte)
+			// plainTextBlock = append(plainTextBlock, BS.ReverseBits(byte))
 		}
 
 		// fmt.Println(plainTextBlock, "|", eword, "~", flag)
@@ -297,36 +225,58 @@ func AddErrors(ctext BS.Block, n, k int) BS.Block {
 }
 
 func main() {
-	// rm25, id25 := ReedMuller(2, 5)
-	rm25, id25 := ReedMuller(3, 7)
-	// rm25, id25 := ReedMuller(4, 9)
-	// rm25, id25 := ReedMuller(5, 11)
 
-	fmt.Println("In bits = ", len(rm25))
-	fmt.Println("Out bits = ", BS.INTSIZE*uint(len(rm25[0])))
+	// rm := ReedMuller(2, 5)
+	// rm := ReedMuller(3, 7)
+	rm := ReedMuller(4, 9)
+	// rm := ReedMuller(5, 11)
+	SanityCheck(rm)
 
-	for i, _ := range rm25 {
-		// fmt.Println(i, r, id25[i], len(GetCharVectors(rm25, id25[i])))
-		fmt.Println(i, len(GetCharVectors(rm25, id25[i])))
+	for _, r := range rm.M {
+		TIO.PrintBin(r)
+		// fmt.Println(i, r, rm.diffs[i], len(GetCharVectors(rm, i)))
+		// fmt.Println(i, len(GetCharVectors(rm, id25[i])))
 	}
+
+	fmt.Println("In bits = ", len(rm.M))
+	fmt.Println("Out bits = ", BS.INTSIZE*uint(len(rm.M[0])))
+
+	textMessage := "It was the best of times, it was the worst of times! ABCDEF"
+	message := TIO.PadBlock(TIO.ParseText(textMessage), len(rm.M) / int(BS.INTSIZE))
+	fmt.Println(int(BS.INTSIZE) * len(message))
+	cipherText := ReedMullerEncrypt(rm, message)
+	cipherText = AddErrors(cipherText, 0, 4)
+	TIO.PrintHex(cipherText)
+	plaintext := ReedMullerDecrypt(rm, cipherText)
+	TIO.PrintHex(plaintext)
+	TIO.PrintHex(message)
+	TIO.PrintHex(BS.BlockXOR(message, plaintext))
+	fmt.Print("<encoded> ")
+	TIO.PrintBin(cipherText)
+	fmt.Print("<decoded> ")
+	TIO.PrintBin(plaintext)
+	fmt.Print("<OG> ")
+	TIO.PrintBin(message)
+	// fmt.Println(TIO.DeparseMessage(plaintext))
+
 
 	// fmt.Println("message: ", msg)
 
-	ctxt := ReedMullerEncrypt(rm25, msg)
-	fmt.Println("Ciphertext: ", ctxt)
+	// ctxt := ReedMullerEncrypt(rm, msg)
+	// fmt.Println("Ciphertext: ", ctxt)
 	
-	// add errors
-	ctxtErr := AddErrors(ctxt, 0, 16)
-	fmt.Println("Ciphertext w/ errors: ", ctxtErr)
+	// // add errors
+	// ctxtErr := AddErrors(ctxt, 0, 16)
+	// fmt.Println("Ciphertext w/ errors: ", ctxtErr)
 
-	fmt.Println(BS.BlockXOR(ctxt, ctxtErr))
+	// fmt.Println(BS.BlockXOR(ctxt, ctxtErr))
 
-	plaintext := ReedMullerDecrypt(rm25, id25, ctxtErr)
-	fmt.Println("Plaintext: ", plaintext)
+	// plaintext := ReedMullerDecrypt(rm, id25, ctxtErr)
+	// fmt.Println("Plaintext: ", plaintext)
 
-	fmt.Println(len(msg), len(ctxt), len(plaintext))
+	// fmt.Println(len(msg), len(ctxt), len(plaintext))
 
- 	fmt.Println("Errors:", BS.BlockXOR(msg, plaintext))
+ // 	fmt.Println("Errors:", BS.BlockXOR(msg, plaintext))
 
  	return
 }

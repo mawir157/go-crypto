@@ -97,3 +97,13 @@ func BlockFlipTopBit(b Block) Block {
 func BlockMoreOnes(b Block) bool {
 	return (2*SumOfBits(b) / (uint(len(b)) * INTSIZE)) >= 1
 }
+
+func ToggleIthBit(b Block, i int) {
+	index := i / (1 << INTSIZE)
+	bits := uint(i) % INTSIZE
+	mask := uint8(1) << bits
+
+	// fmt.Println(index, bits, mask)
+	b[index] ^= mask
+	return
+}

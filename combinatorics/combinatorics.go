@@ -95,3 +95,27 @@ func InvertIndices(m uint, is [][]uint) ([][]uint) {
 
 	return is
 }
+
+func AlternatingVector(run, n uint) (v []uint8) {
+	ui8 := uint8(0)
+	runcount := uint(0)
+	runflag := true
+	for i := uint(0); i < n; i++ {
+		if runflag {
+			ui8 |= 1
+		}
+
+		if (i % BS.INTSIZE) == (BS.INTSIZE - 1) {
+			v = append(v, ui8)
+			ui8 = 0
+		}
+		ui8 <<= 1
+
+		runcount += 1
+		if runcount == run {
+			runflag = !runflag
+			runcount = 0
+		}
+	}
+	return 
+}
