@@ -22,11 +22,14 @@ func DeparseMessage(b BS.Block) string {
 	return message 
 }
 
-func PrintHex(b BS.Block) {
+func PrintHex(b BS.Block,  newLine bool) {
 	for _, char := range b {
 		fmt.Printf("%02X ", char)
 	}
-	fmt.Println("")
+
+	if newLine {
+		fmt.Println("")
+	}
 }
 
 func PadBlock(b BS.Block, n int) BS.Block {
@@ -42,9 +45,18 @@ func PadBlock(b BS.Block, n int) BS.Block {
 	return b
 }
 
-func PrintBin(b BS.Block) {
+func PrintBin(b BS.Block, newLine bool) {
 	for _, char := range b {
 		fmt.Printf("%08b ", char)
 	}
-	fmt.Println("")
+	if newLine {
+		fmt.Println("")
+	}
+}
+
+func PrintAscii(b BS.Block, newLine bool) {
+	fmt.Print(DeparseMessage(b))
+	if newLine {
+		fmt.Println("")
+	}
 }

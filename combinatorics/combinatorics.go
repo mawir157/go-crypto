@@ -48,25 +48,6 @@ func GetWedgesHelper(set []BS.Block, depth uint, start uint,
     }
 }
 
-func GetCombs(set [][]uint, depth uint) [][]uint {
-		seed := make([]uint, 0)
-
-    return GetCombsHelper(set, depth, 0, seed, [][]uint{})
-}
-
-func GetCombsHelper(set [][]uint, depth uint, start uint,
-	                  head []uint, accum [][]uint) [][]uint {
-    if depth == 0 {
-        return append(accum, head)
-    } else {
-        for i := start; i <= uint(len(set)) - depth; i++ {
-            accum = GetCombsHelper(set, depth - 1, i + 1,
-            	                     append(head, set[i]...), accum)
-        }
-        return accum
-    }
-}
-
 // Set Difference: A - B
 func Difference(a, b []uint) (diff []uint) {
 	m := make(map[uint]bool)
@@ -118,4 +99,25 @@ func AlternatingVector(run, n uint) (v []uint8) {
 		}
 	}
 	return 
+}
+
+func rPool(p uint, n []uint, c []uint, cc [][]uint) [][]uint {
+    if len(n) == 0 || p <= 0 {
+        return cc
+    }
+    p--
+    for i := range n {
+        r := make([]uint, len(c)+1)
+        copy(r, c)
+        r[len(r)-1] = n[i]
+        if p == 0 {
+            cc = append(cc, r)
+        }
+        cc = rPool(p, n[i+1:], r, cc)
+    }
+    return cc
+}
+
+func Pool(p uint, n []uint) [][]uint {
+    return rPool(p, n, nil, nil)
 }
