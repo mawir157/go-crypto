@@ -1,8 +1,4 @@
-package bitset
-
-// import (
-// 	"fmt"
-// )
+package main
 
 const INTSIZE uint = 8
 type Block         = []uint8

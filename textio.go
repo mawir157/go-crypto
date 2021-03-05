@@ -1,20 +1,18 @@
-package TextIO
+package main
 
 import (
 	"fmt"
 )
 
-import BS "../bitset"
-
-func ParseText(s string) BS.Block {
-	msg := make(BS.Block, len(s))
+func ParseText(s string) Block {
+	msg := make(Block, len(s))
 	for i, char := range s {
 		msg[i] = uint8(char)
 	}
 	return msg
 }
 
-func DeparseMessage(b BS.Block) string {
+func DeparseMessage(b Block) string {
 	message := ""
 	for _, char := range b {
 		message = message + string(rune(char))
@@ -22,7 +20,7 @@ func DeparseMessage(b BS.Block) string {
 	return message 
 }
 
-func PrintHex(b BS.Block,  newLine bool) {
+func PrintHex(b Block,  newLine bool) {
 	for _, char := range b {
 		fmt.Printf("%02X ", char)
 	}
@@ -32,20 +30,20 @@ func PrintHex(b BS.Block,  newLine bool) {
 	}
 }
 
-func PadBlock(b BS.Block, n int) BS.Block {
+func PadBlock(b Block, n int) Block {
 	need := (len(b) % n)
 
 	if need == 0 {
 		return b
 	}
 
-	pad := make(BS.Block, n - need)
+	pad := make(Block, n - need)
 	b = append(b, pad...)
 	
 	return b
 }
 
-func PrintBin(b BS.Block, newLine bool) {
+func PrintBin(b Block, newLine bool) {
 	for _, char := range b {
 		fmt.Printf("%08b ", char)
 	}
@@ -54,7 +52,7 @@ func PrintBin(b BS.Block, newLine bool) {
 	}
 }
 
-func PrintAscii(b BS.Block, newLine bool) {
+func PrintAscii(b Block, newLine bool) {
 	fmt.Print(DeparseMessage(b))
 	if newLine {
 		fmt.Println("")

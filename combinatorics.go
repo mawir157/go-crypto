@@ -1,6 +1,4 @@
-package combinatorics
-
-import BS "../bitset"
+package main
 
 func Choose(n, k uint) uint {
 	if k > n {
@@ -26,23 +24,23 @@ func Choose(n, k uint) uint {
 	return ret
 }
 
-func GetWedges(set []BS.Block, depth uint) []BS.Block {
+func GetWedges(set []Block, depth uint) []Block {
 		ones := make([]uint8, len(set[0]))
 		for i := range ones {
 		    ones[i] = 255
 		}
 
-    return GetWedgesHelper(set, depth, 0, ones, []BS.Block{})
+    return GetWedgesHelper(set, depth, 0, ones, []Block{})
 }
 
-func GetWedgesHelper(set []BS.Block, depth uint, start uint,
-	                    product BS.Block, accum []BS.Block) []BS.Block {
+func GetWedgesHelper(set []Block, depth uint, start uint,
+	                    product Block, accum []Block) []Block {
     if depth == 0 {
         return append(accum, product)
     } else {
         for i := start; i <= uint(len(set)) - depth; i++ {
             accum = GetWedgesHelper(set, depth - 1, i + 1,
-            	                      BS.BlockAND(product, set[i]), accum)
+            	                      BlockAND(product, set[i]), accum)
         }
         return accum
     }
@@ -86,7 +84,7 @@ func AlternatingVector(run, n uint) (v []uint8) {
 			ui8 |= 1
 		}
 
-		if (i % BS.INTSIZE) == (BS.INTSIZE - 1) {
+		if (i % INTSIZE) == (INTSIZE - 1) {
 			v = append(v, ui8)
 			ui8 = 0
 		}
