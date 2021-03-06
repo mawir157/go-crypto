@@ -2,97 +2,16 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 )
-
-func GetBitAt(b Block, n int) (bool) {
-	// find the byte
-	byte := n / int(INTSIZE)
-	// find the bit within the byte
-	bit := n % int(INTSIZE)
-
-	return ( ((b[byte] >> (int(INTSIZE) - bit - 1)) & 1) == 1 )
-}
-
-func SetBitAt(b Block, n int) (Block) {
-	// find the byte
-	byte := n / int(INTSIZE)
-	// find the bit within the byte
-	bit := n % int(INTSIZE)
-
-	b[byte] |= (1 << (int(INTSIZE) - bit - 1))
-
-	return b
-}
-
-func ClearBitAt(b Block, n int) (Block) {
-	// find the byte
-	byte := n / int(INTSIZE)
-	// find the bit within the byte
-	bit := n % int(INTSIZE)
-
-  mask := ^(uint8(1) << bit)
-  b[byte] &= mask
-
-	return b
-}
-
-func ApplyPerm(b Block, perm []int, forward bool) (bNew Block) {
-	bytesPerPerm := len(perm) / int(INTSIZE)
-
-  for blockId := 0; blockId < len(b); blockId += bytesPerPerm {
-		bTemp := make(Block, bytesPerPerm)
-
-		for i := 0; i < len(perm); i++ {
-			if forward {
-				// send bit i to perm[i]
-				if GetBitAt(b[blockId:blockId+bytesPerPerm], i) { // if the bit is one
-					bTemp = SetBitAt(bTemp, perm[i])
-				}
-		  } else {
-				// send bit perm[i] to bit i
-				if GetBitAt(b[blockId:blockId+bytesPerPerm], perm[i]) { // if the bit is one
-					bTemp = SetBitAt(bTemp, i)
-				}
-			}
-		}
-		bNew = append(bNew, bTemp...)
-  }
-
-	return
-}
-
-func RandomPermutaion(n int) []int {
-  return rand.Perm(n)
-}
-
-func (rm RMCode) permuteRows(perm []int) (RMCode) {
-	mNew := make([]Block, len(rm.M))
-
-	for i := 0; i < len(perm); i++ {
-		mNew[perm[i]] = rm.M[i]
-	}
-
-	return RMCode{r:rm.r, m:rm.m, M:mNew, diffs:rm.diffs, inBits:rm.inBits,
-	              outBits:rm.outBits}
-}
-
 
 func main() {
 
-	// rm := ReedMuller(2, 5)
+	rm := ReedMuller(2, 5)
 	// rm := ReedMuller(3, 7)
 	// rm := ReedMuller(4, 9)
-	rm := ReedMuller(5, 11)
+	// rm := ReedMuller(5, 11)
 
-	// for i, r := range rm.M {
-	// 	// PrintBin(r, false)
-	// 	// fmt.Println(i, rm.diffs[i])
-	// 	// fmt.Println(i, len(GetCharVectors(rm, id25[i])))
-	// }
-
-	fmt.Println("In bits = ", len(rm.M))
-	fmt.Println("Out bits = ", INTSIZE*uint(len(rm.M[0])))
+	rm.Print()
 
 	textMessage :=
 `It was the best of times, it was the worst of times, it was the age of wisdom,
@@ -122,10 +41,11 @@ or for evil, in the superlative degree of comparison only.`
 	// PrintBin(message, true)
 	// PrintAscii(message, true)
 
-
-
 	permn := RandomPermutaion(len(rm.M))
-	rmNew := rm.permuteRows(permn)
+	rmNew := rm.PermuteRows(permn)
+
+	rmNew.Print()
+
 	cipherText := rmNew.Encrypt(message, false)
 	PrintHex(message, true)
 	fmt.Println("")
@@ -136,6 +56,8 @@ or for evil, in the superlative degree of comparison only.`
 
 	plaintext = ApplyPerm(plaintext, permn, true)
 	PrintHex(plaintext, true)
+	fmt.Println("")
+	
 	PrintAscii(plaintext, true)
 
  	return

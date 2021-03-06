@@ -213,3 +213,26 @@ func AddErrors(ctext Block, n, k int) Block {
   }
 	return ctextErr
 }
+
+func (rm RMCode) PermuteRows(perm []int) (RMCode) {
+	mNew := make([]Block, len(rm.M))
+
+	for i := 0; i < len(perm); i++ {
+		mNew[perm[i]] = rm.M[i]
+	}
+
+	return RMCode{r:rm.r, m:rm.m, M:mNew, diffs:rm.diffs, inBits:rm.inBits,
+	              outBits:rm.outBits}
+}
+
+func (rm RMCode) Print() {
+	fmt.Printf("In bits = %d | ", rm.inBits)
+	fmt.Printf("Out bits = %d\n\n", rm.outBits)
+
+	for _, r := range rm.M {
+		PrintBin(r, true)
+	}
+	fmt.Printf("\n")
+
+	return
+}

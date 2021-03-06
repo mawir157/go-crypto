@@ -99,7 +99,63 @@ func ToggleIthBit(b Block, i int) {
 	bits := uint(i) % INTSIZE
 	mask := uint8(1) << bits
 
-	// fmt.Println(index, bits, mask)
 	b[index] ^= mask
+	return
+}
+
+func GetBitAt(b Block, n int) (bool) {
+	// find the byte
+	byte := n / int(INTSIZE)
+	// find the bit within the byte
+	bit := n % int(INTSIZE)
+
+	return ( ((b[byte] >> (int(INTSIZE) - bit - 1)) & 1) == 1 )
+}
+
+func SetBitAt(b Block, n int) (Block) {
+	// find the byte
+	byte := n / int(INTSIZE)
+	// find the bit within the byte
+	bit := n % int(INTSIZE)
+
+	b[byte] |= (1 << (int(INTSIZE) - bit - 1))
+
+	return b
+}
+
+func ClearBitAt(b Block, n int) (Block) {
+	// find the byte
+	byte := n / int(INTSIZE)
+	// find the bit within the byte
+	bit := n % int(INTSIZE)
+
+  mask := ^(uint8(1) << bit)
+  b[byte] &= mask
+
+	return b
+}
+
+func ApplyPerm(b Block, perm []int, forward bool) (bNew Block) {
+	bytesPerPerm := len(perm) / int(INTSIZE)
+
+  for blockId := 0; blockId < len(b); blockId += bytesPerPerm {
+		bTemp := make(Block, bytesPerPerm)
+
+		for i := 0; i < len(perm); i++ {
+			if forward {
+				// send bit i to perm[i]
+				if GetBitAt(b[blockId:blockId+bytesPerPerm], i) { // if the bit is one
+					bTemp = SetBitAt(bTemp, perm[i])
+				}
+		  } else {
+				// send bit perm[i] to bit i
+				if GetBitAt(b[blockId:blockId+bytesPerPerm], perm[i]) { // if the bit is one
+					bTemp = SetBitAt(bTemp, i)
+				}
+			}
+		}
+		bNew = append(bNew, bTemp...)
+  }
+
 	return
 }

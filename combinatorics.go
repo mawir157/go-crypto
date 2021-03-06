@@ -1,5 +1,9 @@
 package main
 
+import (
+	"math/rand"
+)
+
 func Choose(n, k uint) uint {
 	if k > n {
 		panic("Choose: k > n")
@@ -118,4 +122,8 @@ func rPool(p uint, n []uint, c []uint, cc [][]uint) [][]uint {
 
 func Pool(p uint, n []uint) [][]uint {
     return rPool(p, n, nil, nil)
+}
+
+func RandomPermutaion(n int) []int {
+  return rand.Perm(n)
 }
