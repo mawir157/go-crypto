@@ -37,9 +37,10 @@ func PadBlock(b Block, n int) Block {
 		return b
 	}
 
-	pad := make(Block, n - need)
-	b = append(b, pad...)
-	
+	for i := 0; i < n - need; i++ {
+		b = append(b, uint8(n - need))
+	}
+
 	return b
 }
 
