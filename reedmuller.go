@@ -12,6 +12,7 @@ type RMCode struct {
 	outBits  uint
 	M        []Block
 	diffs    [][]uint
+	errors   uint
 }
 
 func ReedMuller(r uint, m uint) RMCode {
