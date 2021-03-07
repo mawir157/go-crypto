@@ -1,9 +1,5 @@
 package main
 
-import (
-
-)
-
 func main() {
 
 	textMessage :=
@@ -17,6 +13,8 @@ that some of its noisiest authorities insisted on its being received, for good
 or for evil, in the superlative degree of comparison only.`
 
 	public, private := generateKeyPair(4)
+	public.Write("mce.pub")
+	private.Write("mce.pri")
 
 	cipherText := public.Encrypt(textMessage)
 	plaintext := private.Decrypt(cipherText)

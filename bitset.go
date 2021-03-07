@@ -50,9 +50,9 @@ func BlockXOR(b1 Block, b2 Block) (Block) {
 	if len(b1) != len(b2) {
 		//ERROR
 	}
-	N := uint(len(b1))
+	N := len(b1)
 	var out = make([]uint8, N)
-	for i := uint(0); i < N; i++ {
+	for i := 0; i < N; i++ {
 		out[i] = b1[i] ^ b2[i]
 	}
 
@@ -63,9 +63,9 @@ func BlockAND(b1 Block, b2 Block) (Block) {
 	if len(b1) != len(b2) {
 		//ERROR
 	}
-	N := uint(len(b1))
+	N := len(b1)
 	var out = make([]uint8, N)
-	for i := uint(0); i < N; i++ {
+	for i := 0; i < N; i++ {
 		out[i] = b1[i] & b2[i]
 	}
 
@@ -114,20 +114,20 @@ func GetBitAt(b Block, n int) (bool) {
 
 func SetBitAt(b Block, n int) (Block) {
 	// find the byte
-	byte := n / int(INTSIZE)
+	byte := n / INTSIZE
 	// find the bit within the byte
-	bit := n % int(INTSIZE)
+	bit := n % INTSIZE
 
-	b[byte] |= (1 << (int(INTSIZE) - bit - 1))
+	b[byte] |= (1 << (INTSIZE - bit - 1))
 
 	return b
 }
 
 func ClearBitAt(b Block, n int) (Block) {
 	// find the byte
-	byte := n / int(INTSIZE)
+	byte := n / INTSIZE
 	// find the bit within the byte
-	bit := n % int(INTSIZE)
+	bit := n % INTSIZE
 
   mask := ^(uint8(1) << bit)
   b[byte] &= mask
@@ -136,7 +136,7 @@ func ClearBitAt(b Block, n int) (Block) {
 }
 
 func ApplyPerm(b Block, perm []int, forward bool) (bNew Block) {
-	bytesPerPerm := len(perm) / int(INTSIZE)
+	bytesPerPerm := len(perm) / INTSIZE
 
   for blockId := 0; blockId < len(b); blockId += bytesPerPerm {
 		bTemp := make(Block, bytesPerPerm)

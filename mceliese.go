@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"os"
+)
+
 type PublicKey struct {
 	RM	RMCode
 }
@@ -49,4 +54,53 @@ func (privKey PrivateKey) Decrypt(cipherText Block) Block {
 	}
 
 	return postCipher
+}
+
+func (pubKey PublicKey) Write(filePath string) {
+	f, _ := os.Create(filePath)
+
+	defer f.Close()
+
+	for _, r := range pubKey.RM.M {
+		// f.Write(r)
+		for _, char := range r {
+			f.WriteString(fmt.Sprintf("%02X ", char))
+		}
+		f.WriteString("\n")
+	}
+
+	f.Sync()
+	return
+}
+
+func (privKey PrivateKey) Write(filePath string) {
+	f, _ := os.Create(filePath)
+
+	defer f.Close()
+
+	for _, r := range privKey.RM.M {
+		for _, char := range r {
+			f.WriteString(fmt.Sprintf("%02X ", char))
+		}
+		f.WriteString("\n")
+	}
+	f.WriteString("\n")
+	f.WriteString("\n")
+
+	for _, r:= range privKey.C_inv {
+		for _, char := range r {
+			f.WriteString(fmt.Sprintf("%02X ", char))
+		}
+		f.WriteString("\n")		
+	}
+	f.WriteString("\n")
+	f.WriteString("\n")
+
+	for _, i := range privKey.perm {
+		f.WriteString(fmt.Sprintf("%d ", i))
+	}
+	f.WriteString("\n")
+
+	f.Sync()
+	return
 }
