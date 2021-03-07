@@ -1,10 +1,10 @@
 package main
 
-const INTSIZE uint = 8
+const INTSIZE int = 8
 type Block         = []uint8
 
 func ReverseBits(n uint8) (rev uint8) {
-	for i := uint(0); i < INTSIZE; i++ {
+	for i := 0; i < INTSIZE; i++ {
 		rev <<= 1
 		if n & 1 == 1 {
 			rev ^= 1
@@ -35,11 +35,11 @@ func ParityOfBits(b Block) (out bool) {
 	return
 }
 
-func SumOfBits(b Block) (ones uint) {
+func SumOfBits(b Block) (ones int) {
 	ones = 0
 	for _, i8 := range b {
 		for i8 > 0 {
-			ones += uint(i8 & 1)
+			ones += int(i8 & 1)
 			i8 >>= 1
 		}
 	}
@@ -91,12 +91,12 @@ func BlockFlipTopBit(b Block) Block {
 }
 
 func BlockMoreOnes(b Block) bool {
-	return (2*SumOfBits(b) / (uint(len(b)) * INTSIZE)) >= 1
+	return (2*SumOfBits(b) / (len(b) * INTSIZE)) >= 1
 }
 
 func ToggleIthBit(b Block, i int) {
 	index := i / (1 << INTSIZE)
-	bits := uint(i) % INTSIZE
+	bits := i % INTSIZE
 	mask := uint8(1) << bits
 
 	b[index] ^= mask
@@ -105,11 +105,11 @@ func ToggleIthBit(b Block, i int) {
 
 func GetBitAt(b Block, n int) (bool) {
 	// find the byte
-	byte := n / int(INTSIZE)
+	byte := n / INTSIZE
 	// find the bit within the byte
-	bit := n % int(INTSIZE)
+	bit := n % INTSIZE
 
-	return ( ((b[byte] >> (int(INTSIZE) - bit - 1)) & 1) == 1 )
+	return ( ((b[byte] >> (INTSIZE - bit - 1)) & 1) == 1 )
 }
 
 func SetBitAt(b Block, n int) (Block) {

@@ -10,13 +10,13 @@ type PrivateKey struct {
 	C_inv   []Block
 }
 
-func generateKeyPair(r uint) (PublicKey, PrivateKey) {
+func generateKeyPair(r int) (PublicKey, PrivateKey) {
 	privateRM := ReedMuller(r, 2*r + 1)
 
 	privateRM.Print(false)
 
-	perm := RandomPermutaion(int(privateRM.outBits))
-	C, C_inv := MatrixPair(int(privateRM.inBits))
+	perm := RandomPermutaion(privateRM.outBits)
+	C, C_inv := MatrixPair(privateRM.inBits)
 
 	publicRM := privateRM.PermuteCols(perm)
 	publicRM.M = MatMulMat(C, publicRM.M)
@@ -26,7 +26,7 @@ func generateKeyPair(r uint) (PublicKey, PrivateKey) {
 }
 
 func (pubKey PublicKey) Encrypt(str string) Block {
-	message := PadBlock(ParseText(str), int(pubKey.RM.inBits) / int(INTSIZE))
+	message := PadBlock(ParseText(str), pubKey.RM.inBits / INTSIZE)
 
 	return pubKey.RM.Encrypt(message, true)
 }
@@ -39,7 +39,7 @@ func (privKey PrivateKey) Decrypt(cipherText Block) Block {
 
 	// right multiply by C_inv
 	postCipher := Block{}
-	P := int(privKey.RM.inBits / INTSIZE)
+	P := privKey.RM.inBits / INTSIZE
 	for i := 0; i < len(cipherText); i += P {
 		eword := make(Block, P)
 		copy(eword, cipherText[i:i+P])

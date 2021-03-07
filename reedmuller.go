@@ -7,29 +7,29 @@ import (
 )
 
 type RMCode struct {
-	r,m      uint
-	inBits   uint
-	outBits  uint
+	r,m      int
+	inBits   int
+	outBits  int
 	M        []Block
-	diffs    [][]uint
-	errors   uint
+	diffs    [][]int
+	errors   int
 }
 
-func ReedMuller(r uint, m uint) RMCode {
-	k := uint(0)
-	n := uint(1 << m)
+func ReedMuller(r int, m int) RMCode {
+	k := 0
+	n := 1 << m
 	rm := []Block{}
-	diffs := [][]uint{}
-	for i := uint(0); i <= r; i++ {
+	diffs := [][]int{}
+	for i := 0; i <= r; i++ {
 		k += Choose(m, i)
 	}
 
-	counter := uint(0)
-	indices := [][]uint{}
-	ordinals := []uint{}
+	counter := 0
+	indices := [][]int{}
+	ordinals := []int{}
 
 	for i := n; i > 0; i = i / 2 {
-		indices = append(indices, []uint{counter})
+		indices = append(indices, []int{counter})
 		rm = append(rm, AlternatingVector(i, n))
 		if counter != 0 {
 			ordinals = append(ordinals, counter)
@@ -38,7 +38,7 @@ func ReedMuller(r uint, m uint) RMCode {
 		counter++ 
 	}
 
-	for i := uint(2); i <= r; i++ {
+	for i := 2; i <= r; i++ {
 		additional := GetWedges(rm[1:(m+1)], i)
 		newIndices := Pool(i, ordinals)
 		
@@ -54,7 +54,7 @@ func ReedMuller(r uint, m uint) RMCode {
 
 	diffs = InvertIndices(m, indices)
 	inBits  := k
-	outBits := uint(1 << m)
+	outBits := 1 << m
 	
 	return RMCode{r:r, m:m, M:rm, diffs:diffs, inBits:inBits, outBits:outBits}
 }
@@ -62,12 +62,12 @@ func (rm RMCode) Encrypt(msg Block, addErrors bool) (ctxt Block) {
 	N := rm.inBits // the number of bit in each plaintext Block
 	P := rm.outBits / INTSIZE // the number of bytes in each cipher text block
 
-	row := uint(0)
+	row := 0
 
 	var cipherBlock = make([]uint8, P)
 	for _, byte := range msg {
 		byte = ReverseBits(byte)
-		for bit := uint(0); bit < INTSIZE; bit++ {
+		for bit := 0; bit < INTSIZE; bit++ {
 			t := byte & 1
 			if t == 1 {
 				cipherBlock = BlockXOR(cipherBlock, rm.M[row])
@@ -87,7 +87,7 @@ func (rm RMCode) Encrypt(msg Block, addErrors bool) (ctxt Block) {
 
 	if addErrors {
 		errors := ((1 << (rm.m - rm.r)) - 1) / 2
-		bytes := int((1 << rm.m) / INTSIZE)
+		bytes := (1 << rm.m) / INTSIZE
 		fmt.Printf("Adding %d errors for every %d bytes.\n\n", errors, bytes)
 
 		ctxt = AddErrors(ctxt, errors, bytes)
@@ -97,7 +97,7 @@ func (rm RMCode) Encrypt(msg Block, addErrors bool) (ctxt Block) {
 }
 
 func (rm RMCode) Decrypt(msg []uint8, fixErrors bool) (ptxt Block) {
-	P := int(rm.outBits / INTSIZE) // the number of bytes in each cipher text block
+	P := rm.outBits / INTSIZE // the number of bytes in each cipher text block
 	// get the characteristic vectors
 	charVectors := [][]Block{}
 	for i := 0; i < len(rm.M); i++ {
@@ -110,30 +110,30 @@ func (rm RMCode) Decrypt(msg []uint8, fixErrors bool) (ptxt Block) {
 		ewordTemp := make(Block, len(eword))
 		copy(ewordTemp, eword)
 
-		coeffs := make([]uint, len(rm.M))
+		coeffs := make([]int, len(rm.M))
 
 		// compare this block to char vectors for each index
 		// iterate backwards through charVectors
 		for j := len(charVectors) - 1; j >= 0; j-- {
 			chrVecs := charVectors[j]
-			votesForOne := uint(0)
+			votesForOne := 0
 			for _, cv := range chrVecs {
 				if BlockDOT(cv, eword) {
 					votesForOne += 1
 				}
 			}
 
-			if votesForOne == uint(len(charVectors[j])) - votesForOne {
+			if votesForOne == len(charVectors[j]) - votesForOne {
 				fmt.Println("DANGER!")
 			} 
 
 			if fixErrors {
-				if votesForOne > uint(len(charVectors[j])) - votesForOne {
+				if votesForOne > len(charVectors[j]) - votesForOne {
 					ewordTemp = BlockXOR(rm.M[j], ewordTemp)
 					coeffs[j] = 1
 				} 
 			} else {
-				if votesForOne == uint(len(charVectors[j])) {
+				if votesForOne == len(charVectors[j]) {
 					ewordTemp = BlockXOR(rm.M[j], ewordTemp)
 					coeffs[j] = 1
 				} 				
@@ -151,7 +151,7 @@ func (rm RMCode) Decrypt(msg []uint8, fixErrors bool) (ptxt Block) {
 
 		for i := 0; i < len(coeffs);  {
 			byte := uint8(0)
-			for bit := uint(0); bit < INTSIZE; bit++ {
+			for bit := 0; bit < INTSIZE; bit++ {
 				byte <<= 1	
 				if coeffs[i] == 1 {
 					byte |= 1
@@ -172,7 +172,7 @@ func (rm RMCode) Decrypt(msg []uint8, fixErrors bool) (ptxt Block) {
 }
 
 func getCharVectors(rm RMCode, row int) (chars []Block) {
-	n := int((1 << rm.m) / INTSIZE)  // probably 2^rm.m
+	n := (1 << rm.m) / INTSIZE // probably 2^rm.m
 	initial := make(Block, n)
 	ones    := make(Block, n)
 	for i := 0; i < n; i++ {
@@ -208,7 +208,7 @@ func AddErrors(ctext Block, n, k int) Block {
   for blockId := 0; blockId < len(ctext); blockId += k {
   	for errCount := 0; errCount < n; errCount++ {
   		err :=  uint8(1)
-  		err <<= rng.Intn(int(INTSIZE))
+  		err <<= rng.Intn(INTSIZE)
   		ctextErr[blockId + rng.Intn(k)] ^= err
   	}
   }

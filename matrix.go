@@ -8,7 +8,7 @@ import (
 
 func Identity(n int) (Id []Block) {
 	for i := 0; i < n; i++ {
-		b := make(Block, n / int(INTSIZE))
+		b := make(Block, n / INTSIZE)
 		b = SetBitAt(b, i)
 
 		Id = append(Id, b)
@@ -75,7 +75,7 @@ func Column(M []Block, c int) (col Block) {
 			ui8 |= 1
 		}
 
-		if (i % int(INTSIZE)) == (int(INTSIZE) - 1) {
+		if (i % INTSIZE) == (INTSIZE - 1) {
 			col = append(col, ui8)
 			ui8 = 0
 		}
@@ -90,7 +90,7 @@ func MatMulMat(M []Block, C []Block) (C_new []Block) {
 	for j, row := range M {
 		rowNew := make(Block, len(C[0]))
 		// for i := range len(C[0]) {
-		for i := 0; i < len(C[0]) * int(INTSIZE); i++ {
+		for i := 0; i < len(C[0]) * INTSIZE; i++ {
 			col := Column(C, i)
 			if BlockDOT(row, col) {
 				rowNew = SetBitAt(rowNew, i)
@@ -106,7 +106,7 @@ func MatMulMatT(M []Block, C []Block) (C_new []Block) {
 	C_new = make([]Block, len(M))
 
 	for j, row := range M {
-		rowNew := make(Block, len(C) / int(INTSIZE))
+		rowNew := make(Block, len(C) / INTSIZE)
 		for i, col := range C {
 			if BlockDOT(row, col) {
 				rowNew = SetBitAt(rowNew, i)
@@ -133,7 +133,7 @@ func MatMulVecL(M []Block, V Block) (Block) {
 func MatMulVecR(V Block, M []Block) (Block) {
 	V_new := make(Block, len(V))
 
-	for i := 0; i < len(M[0]) * int(INTSIZE); i++ {
+	for i := 0; i < len(M[0]) * INTSIZE; i++ {
 		col := Column(M, i)
 		if BlockDOT(V, col) {
 			V_new = SetBitAt(V_new, i)

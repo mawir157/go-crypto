@@ -4,7 +4,7 @@ import (
 	"math/rand"
 )
 
-func Choose(n, k uint) uint {
+func Choose(n, k int) int {
 	if k > n {
 		panic("Choose: k > n")
 	}
@@ -21,14 +21,14 @@ func Choose(n, k uint) uint {
 		return n
 	}
 	// Our return value, and this allows us to skip the first iteration.
-	ret := uint(n - k + 1)
-	for i, j := ret+1, uint(2); j <= k; i, j = i+1, j+1 {
+	ret := n - k + 1
+	for i, j := ret+1, 2; j <= k; i, j = i+1, j+1 {
 		ret = ret * i / j
 	}
 	return ret
 }
 
-func GetWedges(set []Block, depth uint) []Block {
+func GetWedges(set []Block, depth int) []Block {
 		ones := make([]uint8, len(set[0]))
 		for i := range ones {
 		    ones[i] = 255
@@ -37,12 +37,12 @@ func GetWedges(set []Block, depth uint) []Block {
     return GetWedgesHelper(set, depth, 0, ones, []Block{})
 }
 
-func GetWedgesHelper(set []Block, depth uint, start uint,
+func GetWedgesHelper(set []Block, depth int, start int,
 	                    product Block, accum []Block) []Block {
     if depth == 0 {
         return append(accum, product)
     } else {
-        for i := start; i <= uint(len(set)) - depth; i++ {
+        for i := start; i <= len(set) - depth; i++ {
             accum = GetWedgesHelper(set, depth - 1, i + 1,
             	                      BlockAND(product, set[i]), accum)
         }
@@ -51,8 +51,8 @@ func GetWedgesHelper(set []Block, depth uint, start uint,
 }
 
 // Set Difference: A - B
-func Difference(a, b []uint) (diff []uint) {
-	m := make(map[uint]bool)
+func Difference(a, b []int) (diff []int) {
+	m := make(map[int]bool)
 
 	for _, item := range b {
 		m[item] = true
@@ -66,9 +66,9 @@ func Difference(a, b []uint) (diff []uint) {
 	return
 }
 
-func InvertIndices(m uint, is [][]uint) ([][]uint) {
-	all := []uint{}
-	for i := uint(1); i <= m; i++ {
+func InvertIndices(m int, is [][]int) ([][]int) {
+	all := []int{}
+	for i := 1; i <= m; i++ {
 		all = append(all, i)
 	}	
 
@@ -79,11 +79,11 @@ func InvertIndices(m uint, is [][]uint) ([][]uint) {
 	return is
 }
 
-func AlternatingVector(run, n uint) (v Block) {
+func AlternatingVector(run, n int) (v Block) {
 	ui8 := uint8(0)
-	runcount := uint(0)
+	runcount := 0
 	runflag := true
-	for i := uint(0); i < n; i++ {
+	for i := 0; i < n; i++ {
 		if runflag {
 			ui8 |= 1
 		}
@@ -103,13 +103,13 @@ func AlternatingVector(run, n uint) (v Block) {
 	return 
 }
 
-func rPool(p uint, n []uint, c []uint, cc [][]uint) [][]uint {
+func rPool(p int, n []int, c []int, cc [][]int) [][]int {
     if len(n) == 0 || p <= 0 {
         return cc
     }
     p--
     for i := range n {
-        r := make([]uint, len(c)+1)
+        r := make([]int, len(c)+1)
         copy(r, c)
         r[len(r)-1] = n[i]
         if p == 0 {
@@ -120,7 +120,7 @@ func rPool(p uint, n []uint, c []uint, cc [][]uint) [][]uint {
     return cc
 }
 
-func Pool(p uint, n []uint) [][]uint {
+func Pool(p int, n []int) [][]int {
     return rPool(p, n, nil, nil)
 }
 
