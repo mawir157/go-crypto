@@ -7,16 +7,22 @@ type PublicKey struct {
 type PrivateKey struct {
 	RM			RMCode
 	perm    []int
+	C_inv   []Block
 }
 
 func generateKeyPair(r uint) (PublicKey, PrivateKey) {
 	privateRM := ReedMuller(r, 2*r + 1)
 
-	perm := RandomPermutaion(int(privateRM.inBits))
-	publicRM := privateRM.PermuteRows(perm)
+	privateRM.Print(false)
+
+	perm := RandomPermutaion(int(privateRM.outBits))
+	C, C_inv := MatrixPair(int(privateRM.inBits))
+
+	publicRM := privateRM.PermuteCols(perm)
+	publicRM.M = MatMulMat(C, publicRM.M)
 
 	return PublicKey{RM:publicRM},
-	       PrivateKey{RM:privateRM, perm:perm}
+	       PrivateKey{RM:privateRM, perm:perm, C_inv:C_inv}
 }
 
 func (pubKey PublicKey) Encrypt(str string) Block {
@@ -26,7 +32,21 @@ func (pubKey PublicKey) Encrypt(str string) Block {
 }
 
 func (privKey PrivateKey) Decrypt(cipherText Block) Block {
-	plaintext := privKey.RM.Decrypt(cipherText, true)
+	// undo the permutation
+	cipherText = ApplyPerm(cipherText, privKey.perm, true)
+	// apply standard rm decryption
+	cipherText = privKey.RM.Decrypt(cipherText, true)
 
-	return ApplyPerm(plaintext, privKey.perm, true)
+	// right multiply by C_inv
+	postCipher := Block{}
+	P := int(privKey.RM.inBits / INTSIZE)
+	for i := 0; i < len(cipherText); i += P {
+		eword := make(Block, P)
+		copy(eword, cipherText[i:i+P])
+		eword = MatMulVecR(eword, privKey.C_inv)
+
+		postCipher = append(postCipher, eword...)
+	}
+
+	return postCipher
 }

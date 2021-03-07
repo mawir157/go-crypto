@@ -88,7 +88,7 @@ func (rm RMCode) Encrypt(msg Block, addErrors bool) (ctxt Block) {
 	if addErrors {
 		errors := ((1 << (rm.m - rm.r)) - 1) / 2
 		bytes := int((1 << rm.m) / INTSIZE)
-		fmt.Printf("Adding %d errors for every %d bytes.\n", errors, bytes)
+		fmt.Printf("Adding %d errors for every %d bytes.\n\n", errors, bytes)
 
 		ctxt = AddErrors(ctxt, errors, bytes)
 	}
@@ -199,8 +199,8 @@ func getCharVectors(rm RMCode, row int) (chars []Block) {
 
 // 'n' errors per 'k' bytes
 func AddErrors(ctext Block, n, k int) Block {
-  s1 := rand.NewSource(time.Now().UnixNano())
-  r1 := rand.New(s1)
+  seed := rand.NewSource(time.Now().UnixNano())
+  rng := rand.New(seed)
 
   ctextErr := make(Block, len(ctext))
   copy(ctextErr, ctext)
@@ -208,8 +208,8 @@ func AddErrors(ctext Block, n, k int) Block {
   for blockId := 0; blockId < len(ctext); blockId += k {
   	for errCount := 0; errCount < n; errCount++ {
   		err :=  uint8(1)
-  		err <<= r1.Intn(int(INTSIZE))
-  		ctextErr[blockId + r1.Intn(k)] ^= err
+  		err <<= rng.Intn(int(INTSIZE))
+  		ctextErr[blockId + rng.Intn(k)] ^= err
   	}
   }
 	return ctextErr
@@ -226,14 +226,27 @@ func (rm RMCode) PermuteRows(perm []int) (RMCode) {
 	              outBits:rm.outBits}
 }
 
-func (rm RMCode) Print() {
+func (rm RMCode) PermuteCols(perm []int) (RMCode) {
+	mNew := make([]Block, len(rm.M))
+
+	for i := 0; i < len(mNew); i++ {
+		mNew[i] = ApplyPerm(rm.M[i], perm, false)
+	}
+
+	return RMCode{r:rm.r, m:rm.m, M:mNew, diffs:rm.diffs, inBits:rm.inBits,
+	              outBits:rm.outBits}	
+}
+
+func (rm RMCode) Print(showMatrix bool) {
 	fmt.Printf("In bits = %d | ", rm.inBits)
 	fmt.Printf("Out bits = %d\n\n", rm.outBits)
 
-	for _, r := range rm.M {
-		PrintBin(r, true)
+	if showMatrix {
+		for _, r := range rm.M {
+			PrintBin(r, true)
+		}
+		fmt.Printf("\n")
 	}
-	fmt.Printf("\n")
 
 	return
 }

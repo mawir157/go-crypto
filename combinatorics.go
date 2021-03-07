@@ -79,7 +79,7 @@ func InvertIndices(m uint, is [][]uint) ([][]uint) {
 	return is
 }
 
-func AlternatingVector(run, n uint) (v []uint8) {
+func AlternatingVector(run, n uint) (v Block) {
 	ui8 := uint8(0)
 	runcount := uint(0)
 	runflag := true
