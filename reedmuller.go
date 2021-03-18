@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
-	"time"
 )
 
 type RMCode struct {
@@ -170,18 +168,15 @@ func getCharVectors2(rm RMCode, row int) (chars []Bitset) {
 	return
 }
 
-
 // 'n' errors per 'k' bytes
 func AddErrors2(ctext Bitset, n, k int) Bitset {
-	seed := rand.NewSource(time.Now().UnixNano())
-	rng := rand.New(seed)
-
 	ctextErr := make(Bitset, len(ctext))
 	copy(ctextErr, ctext)
 
 	for blockId := 0; blockId < len(ctext); blockId += k {
-		for errCount := 0; errCount < n; errCount++ {
-			ctextErr[blockId + rng.Intn(k)] = !ctextErr[blockId + rng.Intn(k)]
+		errors := RandomPermutaion(k)
+		for errIndex := 0; errIndex < n; errIndex++ {
+			ctextErr[blockId + errors[errIndex]] = !ctextErr[blockId + errors[errIndex]]
 		}
 	}
 	return ctextErr 
@@ -201,7 +196,8 @@ func (rm RMCode) PermuteCols(perm []int) (RMCode) {
 
 func (rm RMCode) Print(showMatrix bool) {
 	fmt.Printf("In bits = %d | ", rm.inBits)
-	fmt.Printf("Out bits = %d\n\n", rm.outBits)
+	fmt.Printf("Out bits = %d | ", rm.outBits)
+	fmt.Printf("Expansion ratio = %f\n\n", float64(rm.outBits)/float64(rm.inBits))
 
 	if showMatrix {
 		for _, r := range rm.M {

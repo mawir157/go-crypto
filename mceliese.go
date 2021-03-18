@@ -59,6 +59,7 @@ func (privKey PrivateKey) Decrypt(cipherText Bitset) Bitset {
 }
 
 func (pubKey PublicKey) Write(filePath string) {
+	fmt.Println("Saving public key...")
 	f, _ := os.Create(filePath)
 
 	defer f.Close()
@@ -83,6 +84,7 @@ func (pubKey PublicKey) Write(filePath string) {
 }
 
 func (privKey PrivateKey) Write(filePath string) {
+	fmt.Println("Saving private key...")
 	f, _ := os.Create(filePath)
 
 	defer f.Close()
