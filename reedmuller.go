@@ -82,7 +82,7 @@ func (rm RMCode) Encrypt(msg Bitset, addErrors bool) (ctxt Bitset) {
 		fmt.Printf("Adding %d errors for every %d bits (%f bits per error).\n\n",
 		           errors, bits, float64(bits)/float64(errors))
 
-		ctxt = AddErrors2(ctxt, errors, bits)
+		ctxt = AddErrors(ctxt, errors, bits)
 	}
 
 	return
@@ -93,7 +93,7 @@ func (rm RMCode) Decrypt(msg Bitset, fixErrors bool) (ptxt Bitset) {
 	// get the characteristic vectors
 	charVectors := [][]Bitset{}
 	for i := 0; i < len(rm.M); i++ {
-		charVectors = append(charVectors, getCharVectors2(rm, i))
+		charVectors = append(charVectors, getCharVectors(rm, i))
 	}
 
 	for i := 0; i < len(msg); i += P {
@@ -149,7 +149,7 @@ func (rm RMCode) Decrypt(msg Bitset, fixErrors bool) (ptxt Bitset) {
 	return
 }
 
-func getCharVectors2(rm RMCode, row int) (chars []Bitset) {
+func getCharVectors(rm RMCode, row int) (chars []Bitset) {
 	initial := BitsetAllOnes(rm.outBits)
 	chars = []Bitset{ initial }
 
@@ -159,8 +159,8 @@ func getCharVectors2(rm RMCode, row int) (chars []Bitset) {
 
 		temp := []Bitset{}
 		for _, v := range chars {
-			temp = append(temp, BitsetAND(v, fold))
-			temp = append(temp, BitsetAND(v, notFold))
+			// temp = append(temp, BitsetAND(v, fold))
+			temp = append(temp, BitsetAND(v, fold), BitsetAND(v, notFold))
 		}
 		chars = temp
 	}
@@ -169,7 +169,7 @@ func getCharVectors2(rm RMCode, row int) (chars []Bitset) {
 }
 
 // 'n' errors per 'k' bytes
-func AddErrors2(ctext Bitset, n, k int) Bitset {
+func AddErrors(ctext Bitset, n, k int) Bitset {
 	ctextErr := make(Bitset, len(ctext))
 	copy(ctextErr, ctext)
 

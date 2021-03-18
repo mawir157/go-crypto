@@ -25,7 +25,9 @@ func InvertBitset(bs Bitset) (bsNew Bitset) {
 func ParityOfBitset(bs Bitset) (par bool) {
 	par = false
 	for _, b := range bs {
-		par = (par != b)
+		if b {
+			par = !par
+		}
 	}
 
 	return
@@ -70,6 +72,14 @@ func BitsetAND(b1 Bitset, b2 Bitset) (and Bitset) {
 	return
 }
 
+func BitsetANDRef(b1 Bitset, b2 Bitset) (Bitset) {
+	for i := 0; i < len(b1); i++ {
+		b1[i] = b1[i] && b2[i]
+	}
+
+	return b1
+}
+
 func BitsetOR(b1 Bitset, b2 Bitset) (or Bitset) {
 	if len(b1) != len(b2) {
 		//ERROR
@@ -85,7 +95,14 @@ func BitsetOR(b1 Bitset, b2 Bitset) (or Bitset) {
 }
 
 func BitsetDot(b1 Bitset, b2 Bitset) (dot bool) {
-	return ParityOfBitset(BitsetAND(b1, b2))
+	dot = false
+	for i := 0; i < len(b1); i++ {
+		if (b1[i] && b2[i]) {
+			dot = !dot
+		}
+	}
+
+	return
 }
 
 func BitsetAllTrue(bs Bitset) (bool) {
