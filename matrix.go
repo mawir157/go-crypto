@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-func Identity(n int) (Id []Block) {
+func Identity(n int) (Id []Bitset) {
 	for i := 0; i < n; i++ {
-		b := make(Block, n / INTSIZE)
-		b = SetBitAt(b, i)
+		b := make(Bitset, n)
+		b[i] = true
 
 		Id = append(Id, b)
 	}
@@ -17,11 +17,11 @@ func Identity(n int) (Id []Block) {
 	return
 }
 
-func MatrixPair(n int) ([]Block, []Block) {
+func MatrixPair(n int) ([]Bitset, []Bitset) {
 	Id    := Identity(n)
 
-	C     := make([]Block, len(Id))
-	C_inv := make([]Block, len(Id))
+	C     := make([]Bitset, len(Id))
+	C_inv := make([]Bitset, len(Id))
 
 	perm := RandomPermutaion(n)
 
@@ -30,71 +30,61 @@ func MatrixPair(n int) ([]Block, []Block) {
 		C[perm[i]] = Id[i]
 		C_inv[i]   = Id[i]
 	}
+	
+	seed := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(seed)
 
-  seed := rand.NewSource(time.Now().UnixNano())
-  rng := rand.New(seed)
-
-  swaps := n*n
-  is, js:= []int{}, []int{}
-  for len(is) < swaps {
+	swaps := n*n
+	is, js:= []int{}, []int{}
+	for len(is) < swaps {
 		i := rng.Intn(n)
 		j := rng.Intn(n)
 		if i != j {
 			is = append(is, i)
 			js = append(js, j)
-		}  	
-  }
+		}
+	}
 
 	// apply row operations
 	for p := 0; p < len(is); p++ {
 		i := is[p]
 		j := js[p]
-		C[i] = BlockXOR(C[i], C[j])
+		C[i] = BitsetXOR(C[i], C[j])
 
 		i = is[swaps - p - 1]
 		j = js[swaps - p - 1]
-		C_inv[i] = BlockXOR(C_inv[i], C_inv[j])
+		C_inv[i] = BitsetXOR(C_inv[i], C_inv[j])
 	}
 
 	copy(Id, C_inv)
 
 	// doing this inplace in more trouble than it is worth!
 	for i := 0; i < len(perm); i++ {
-		C_inv[i]   = Id[perm[i]]
+		C_inv[i] = Id[perm[i]]
 	}
 
 	return C, C_inv
 	
 }
 
-func Column(M []Block, c int) (col Block) {
-	ui8 := uint8(0)
+func Column(M []Bitset, c int) (col Bitset) {
+	col = make(Bitset, len(M))
 
 	for i := 0; i < len(M); i++ {
-		if GetBitAt(M[i], c) {
-			ui8 |= 1
-		}
-
-		if (i % INTSIZE) == (INTSIZE - 1) {
-			col = append(col, ui8)
-			ui8 = 0
-		}
-		ui8 <<= 1
+		col[i] = M[i][c]
 	}
-	return 
+
+	return
 }
 
-func MatMulMat(M []Block, C []Block) (C_new []Block) {
-	C_new = make([]Block, len(M))
+func MatMulMat(M []Bitset, C []Bitset) (C_new []Bitset) {
+	C_new = make([]Bitset, len(M))
 
 	for j, row := range M {
-		rowNew := make(Block, len(C[0]))
-		// for i := range len(C[0]) {
-		for i := 0; i < len(C[0]) * INTSIZE; i++ {
+		rowNew := make(Bitset, len(C[0]))
+		for i := 0; i < len(C[0]); i++ {
 			col := Column(C, i)
-			if BlockDOT(row, col) {
-				rowNew = SetBitAt(rowNew, i)
-			}
+			rowNew[i] = BitsetDot(row, col)
 		}	
 		C_new[j] = rowNew
 	}
@@ -102,48 +92,18 @@ func MatMulMat(M []Block, C []Block) (C_new []Block) {
 	return
 }
 
-func MatMulMatT(M []Block, C []Block) (C_new []Block) {
-	C_new = make([]Block, len(M))
+func MatMulVecR(V Bitset, M []Bitset) (Bitset) {
+	V_new := make(Bitset, len(V))
 
-	for j, row := range M {
-		rowNew := make(Block, len(C) / INTSIZE)
-		for i, col := range C {
-			if BlockDOT(row, col) {
-				rowNew = SetBitAt(rowNew, i)
-			}
-		}	
-		C_new[j] = rowNew
-	}
-
-	return
-}
-
-func MatMulVecL(M []Block, V Block) (Block) {
-	V_new := make(Block, len(V))
-
-	for i, row := range M {
-		if BlockDOT(row, V) {
-			V_new = SetBitAt(V_new, i)
-		}
-	}
-
-	return V_new
-}
-
-func MatMulVecR(V Block, M []Block) (Block) {
-	V_new := make(Block, len(V))
-
-	for i := 0; i < len(M[0]) * INTSIZE; i++ {
+	for i := 0; i < len(M[0]); i++ {
 		col := Column(M, i)
-		if BlockDOT(V, col) {
-			V_new = SetBitAt(V_new, i)
-		}
+		V_new[i] = BitsetDot(V, col)
 	}	
 
 	return V_new
 }
 
-func PrintMatrix(M []Block) {
+func PrintMatrix(M []Bitset) {
 	for _, r := range M {
 		PrintBin(r, true)
 	}

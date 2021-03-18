@@ -10,16 +10,17 @@ type RMCode struct {
 	r,m      int
 	inBits   int
 	outBits  int
-	M        []Block
+	M        []Bitset
 	diffs    [][]int
 	errors   int
 }
 
-func ReedMuller(r int, m int) RMCode {
+func ReedMuller(r, m int) RMCode {
 	k := 0
 	n := 1 << m
-	rm := []Block{}
+	rm := []Bitset{}
 	diffs := [][]int{}
+
 	for i := 0; i <= r; i++ {
 		k += Choose(m, i)
 	}
@@ -30,12 +31,12 @@ func ReedMuller(r int, m int) RMCode {
 
 	for i := n; i > 0; i = i / 2 {
 		indices = append(indices, []int{counter})
-		rm = append(rm, AlternatingVector(i, n))
+		rm = append(rm, AlternatingBitset(i, n))
 		if counter != 0 {
 			ordinals = append(ordinals, counter)
 		}
 
-		counter++ 
+		counter++
 	}
 
 	for i := 2; i <= r; i++ {
@@ -58,59 +59,53 @@ func ReedMuller(r int, m int) RMCode {
 	
 	return RMCode{r:r, m:m, M:rm, diffs:diffs, inBits:inBits, outBits:outBits}
 }
-func (rm RMCode) Encrypt(msg Block, addErrors bool) (ctxt Block) {
+
+func (rm RMCode) Encrypt(msg Bitset, addErrors bool) (ctxt Bitset) {
 	N := rm.inBits // the number of bit in each plaintext Block
-	P := rm.outBits / INTSIZE // the number of bytes in each cipher text block
+	P := rm.outBits // the number of bytes in each cipher text block
 
-	row := 0
+	ctxt = make(Bitset, 0)
 
-	var cipherBlock = make([]uint8, P)
-	for _, byte := range msg {
-		byte = ReverseBits(byte)
-		for bit := 0; bit < INTSIZE; bit++ {
-			t := byte & 1
-			if t == 1 {
-				cipherBlock = BlockXOR(cipherBlock, rm.M[row])
-			} else {
-			
+	for i := 0; i < len(msg); i += N {
+		cipherBlock := make(Bitset, P)
+		for b := 0; b < N; b++ {
+			if msg[(i + b)] {
+				cipherBlock = BitsetXOR(cipherBlock, rm.M[b])
 			}
-			byte >>= 1
-			row += 1
 		}
 		
-		if row == N {
-			row = 0
-			ctxt = append(ctxt, cipherBlock[:]...)
-			cipherBlock = make([]uint8, P)
-		}
+		ctxt = append(ctxt, cipherBlock[:]...)
+		cipherBlock = make(Bitset, P)
 	}
 
 	if addErrors {
 		errors := ((1 << (rm.m - rm.r)) - 1) / 2
-		bytes := (1 << rm.m) / INTSIZE
-		fmt.Printf("Adding %d errors for every %d bytes.\n\n", errors, bytes)
+		bits := (1 << rm.m)
+		fmt.Printf("Adding %d errors for every %d bits (%f bits per error).\n\n",
+		           errors, bits, float64(bits)/float64(errors))
 
-		ctxt = AddErrors(ctxt, errors, bytes)
+		ctxt = AddErrors2(ctxt, errors, bits)
 	}
 
 	return
 }
 
-func (rm RMCode) Decrypt(msg []uint8, fixErrors bool) (ptxt Block) {
-	P := rm.outBits / INTSIZE // the number of bytes in each cipher text block
+func (rm RMCode) Decrypt(msg Bitset, fixErrors bool) (ptxt Bitset) {
+	P := rm.outBits
 	// get the characteristic vectors
-	charVectors := [][]Block{}
+	charVectors := [][]Bitset{}
 	for i := 0; i < len(rm.M); i++ {
-		charVectors = append(charVectors, getCharVectors(rm, i))
+		charVectors = append(charVectors, getCharVectors2(rm, i))
 	}
 
 	for i := 0; i < len(msg); i += P {
-		eword := make(Block, P)
+
+		eword := make(Bitset, P)
 		copy(eword, msg[i:i+P])
-		ewordTemp := make(Block, len(eword))
+		ewordTemp := make(Bitset, len(eword))
 		copy(ewordTemp, eword)
 
-		coeffs := make([]int, len(rm.M))
+		coeffs := make([]bool, len(rm.M))
 
 		// compare this block to char vectors for each index
 		// iterate backwards through charVectors
@@ -118,78 +113,56 @@ func (rm RMCode) Decrypt(msg []uint8, fixErrors bool) (ptxt Block) {
 			chrVecs := charVectors[j]
 			votesForOne := 0
 			for _, cv := range chrVecs {
-				if BlockDOT(cv, eword) {
+				if BitsetDot(cv, eword) {
 					votesForOne += 1
 				}
 			}
 
 			if votesForOne == len(charVectors[j]) - votesForOne {
 				fmt.Println("DANGER!")
-			} 
+			}
 
 			if fixErrors {
 				if votesForOne > len(charVectors[j]) - votesForOne {
-					ewordTemp = BlockXOR(rm.M[j], ewordTemp)
-					coeffs[j] = 1
-				} 
+					ewordTemp = BitsetXOR(rm.M[j], ewordTemp)
+					coeffs[j] = true
+				}
 			} else {
 				if votesForOne == len(charVectors[j]) {
-					ewordTemp = BlockXOR(rm.M[j], ewordTemp)
-					coeffs[j] = 1
+					ewordTemp = BitsetXOR(rm.M[j], ewordTemp)
+					coeffs[j] = true
 				} 				
 			}
-
 
 			if (j == 0) || (len(rm.diffs[j]) != len(rm.diffs[j-1])) {
 				copy(eword, ewordTemp)
 			}
 		}
 
-		flag := BlockMoreOnes(eword)
-
-		plainTextBlock := Block{}
-
-		for i := 0; i < len(coeffs);  {
-			byte := uint8(0)
-			for bit := 0; bit < INTSIZE; bit++ {
-				byte <<= 1	
-				if coeffs[i] == 1 {
-					byte |= 1
-				}
-				i++
-			}
-			plainTextBlock = append(plainTextBlock, byte)
-		}
+		flag := BitsetVote(eword, true)
 
 		if flag {
-			plainTextBlock = BlockFlipTopBit(plainTextBlock)
+			coeffs = BitsetFlipTopBit(coeffs)
 		}
 
-		ptxt = append(ptxt, plainTextBlock...)
+		ptxt = append(ptxt, coeffs...)
 	}
 
 	return
 }
 
-func getCharVectors(rm RMCode, row int) (chars []Block) {
-	n := (1 << rm.m) / INTSIZE // probably 2^rm.m
-	initial := make(Block, n)
-	ones    := make(Block, n)
-	for i := 0; i < n; i++ {
-		initial[i] = 255 // CAREFUL
-		ones[i]    = 255
-	}
-
-	chars = []Block{initial}
+func getCharVectors2(rm RMCode, row int) (chars []Bitset) {
+	initial := BitsetAllOnes(rm.outBits)
+	chars = []Bitset{ initial }
 
 	for _, index := range rm.diffs[row] {
 		fold := rm.M[index] // grab the ith row of the r-m matrix
-		notFold := InvertBits(fold) //
+		notFold := InvertBitset(fold) //
 
-		temp := []Block{}
+		temp := []Bitset{}
 		for _, v := range chars {
-			temp = append(temp, BlockAND(v, fold))
-			temp = append(temp, BlockAND(v, notFold))
+			temp = append(temp, BitsetAND(v, fold))
+			temp = append(temp, BitsetAND(v, notFold))
 		}
 		chars = temp
 	}
@@ -197,45 +170,34 @@ func getCharVectors(rm RMCode, row int) (chars []Block) {
 	return
 }
 
+
 // 'n' errors per 'k' bytes
-func AddErrors(ctext Block, n, k int) Block {
-  seed := rand.NewSource(time.Now().UnixNano())
-  rng := rand.New(seed)
+func AddErrors2(ctext Bitset, n, k int) Bitset {
+	seed := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(seed)
 
-  ctextErr := make(Block, len(ctext))
-  copy(ctextErr, ctext)
+	ctextErr := make(Bitset, len(ctext))
+	copy(ctextErr, ctext)
 
-  for blockId := 0; blockId < len(ctext); blockId += k {
-  	for errCount := 0; errCount < n; errCount++ {
-  		err :=  uint8(1)
-  		err <<= rng.Intn(INTSIZE)
-  		ctextErr[blockId + rng.Intn(k)] ^= err
-  	}
-  }
-	return ctextErr
-}
-
-func (rm RMCode) PermuteRows(perm []int) (RMCode) {
-	mNew := make([]Block, len(rm.M))
-
-	for i := 0; i < len(perm); i++ {
-		mNew[perm[i]] = rm.M[i]
+	for blockId := 0; blockId < len(ctext); blockId += k {
+		for errCount := 0; errCount < n; errCount++ {
+			ctextErr[blockId + rng.Intn(k)] = !ctextErr[blockId + rng.Intn(k)]
+		}
 	}
-
-	return RMCode{r:rm.r, m:rm.m, M:mNew, diffs:rm.diffs, inBits:rm.inBits,
-	              outBits:rm.outBits}
+	return ctextErr 
 }
 
 func (rm RMCode) PermuteCols(perm []int) (RMCode) {
-	mNew := make([]Block, len(rm.M))
+	mNew := make([]Bitset, len(rm.M))
 
 	for i := 0; i < len(mNew); i++ {
-		mNew[i] = ApplyPerm(rm.M[i], perm, false)
+		mNew[i] = ApplyPermToBitset(rm.M[i], perm, false)
 	}
 
 	return RMCode{r:rm.r, m:rm.m, M:mNew, diffs:rm.diffs, inBits:rm.inBits,
 	              outBits:rm.outBits}	
 }
+
 
 func (rm RMCode) Print(showMatrix bool) {
 	fmt.Printf("In bits = %d | ", rm.inBits)

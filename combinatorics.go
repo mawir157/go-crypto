@@ -28,28 +28,6 @@ func Choose(n, k int) int {
 	return ret
 }
 
-func GetWedges(set []Block, depth int) []Block {
-		ones := make([]uint8, len(set[0]))
-		for i := range ones {
-		    ones[i] = 255
-		}
-
-    return GetWedgesHelper(set, depth, 0, ones, []Block{})
-}
-
-func GetWedgesHelper(set []Block, depth int, start int,
-	                    product Block, accum []Block) []Block {
-    if depth == 0 {
-        return append(accum, product)
-    } else {
-        for i := start; i <= len(set) - depth; i++ {
-            accum = GetWedgesHelper(set, depth - 1, i + 1,
-            	                      BlockAND(product, set[i]), accum)
-        }
-        return accum
-    }
-}
-
 // Set Difference: A - B
 func Difference(a, b []int) (diff []int) {
 	m := make(map[int]bool)
@@ -79,20 +57,71 @@ func InvertIndices(m int, is [][]int) ([][]int) {
 	return is
 }
 
-func AlternatingVector(run, n int) (v Block) {
-	ui8 := uint8(0)
-	runcount := 0
-	runflag := true
-	for i := 0; i < n; i++ {
-		if runflag {
-			ui8 |= 1
+func rPool(p int, n []int, c []int, cc [][]int) [][]int {
+	if len(n) == 0 || p <= 0 {
+		return cc
+	}
+	p--
+	for i := range n {
+		r := make([]int, len(c)+1)
+		copy(r, c)
+		r[len(r)-1] = n[i]
+		if p == 0 {
+			cc = append(cc, r)
+		}
+		cc = rPool(p, n[i+1:], r, cc)
+	}
+	return cc
+}
+
+func Pool(p int, n []int) [][]int {
+	return rPool(p, n, nil, nil)
+}
+
+func RandomPermutaion(n int) []int {
+	return rand.Perm(n)
+}
+
+func Log2(n int) (l int) {
+	l = -1
+	for n != 0 {
+		n >>= 1
+		l++
+	}
+	return
+}
+
+func GetWedges(set []Bitset, depth int) []Bitset {
+		ones := make(Bitset, len(set[0]))
+		for i := range ones {
+				ones[i] = true
 		}
 
-		if (i % INTSIZE) == (INTSIZE - 1) {
-			v = append(v, ui8)
-			ui8 = 0
+		return GetWedgesHelper(set, depth, 0, ones, []Bitset{})
+}
+
+func GetWedgesHelper(set []Bitset, depth int, start int,
+                      product Bitset, accum []Bitset) []Bitset {
+	if depth == 0 {
+		return append(accum, product)
+	} else {
+		for i := start; i <= len(set) - depth; i++ {
+			accum = GetWedgesHelper(set, depth - 1, i + 1,
+			BitsetAND(product, set[i]), accum)
 		}
-		ui8 <<= 1
+		return accum
+	}
+}
+
+func AlternatingBitset(run, n int) (v Bitset) {
+	v = make(Bitset, n)
+	runcount := 0
+	runflag := true
+
+	for i := 0; i < n; i++ {
+		if runflag {
+			v[i] = true
+		}
 
 		runcount += 1
 		if runcount == run {
@@ -100,30 +129,6 @@ func AlternatingVector(run, n int) (v Block) {
 			runcount = 0
 		}
 	}
-	return 
-}
 
-func rPool(p int, n []int, c []int, cc [][]int) [][]int {
-    if len(n) == 0 || p <= 0 {
-        return cc
-    }
-    p--
-    for i := range n {
-        r := make([]int, len(c)+1)
-        copy(r, c)
-        r[len(r)-1] = n[i]
-        if p == 0 {
-            cc = append(cc, r)
-        }
-        cc = rPool(p, n[i+1:], r, cc)
-    }
-    return cc
-}
-
-func Pool(p int, n []int) [][]int {
-    return rPool(p, n, nil, nil)
-}
-
-func RandomPermutaion(n int) []int {
-  return rand.Perm(n)
+	return
 }

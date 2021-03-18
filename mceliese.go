@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	// "io/ioutil"
 	"os"
+	// "strconv"
+	// "strings"
 )
 
 type PublicKey struct {
@@ -12,11 +15,11 @@ type PublicKey struct {
 type PrivateKey struct {
 	RM			RMCode
 	perm    []int
-	C_inv   []Block
+	C_inv   []Bitset
 }
 
-func generateKeyPair(r int) (PublicKey, PrivateKey) {
-	privateRM := ReedMuller(r, 2*r + 1)
+func generateKeyPair(r, m int) (PublicKey, PrivateKey) {
+	privateRM := ReedMuller(r, m)
 
 	privateRM.Print(false)
 
@@ -30,23 +33,22 @@ func generateKeyPair(r int) (PublicKey, PrivateKey) {
 	       PrivateKey{RM:privateRM, perm:perm, C_inv:C_inv}
 }
 
-func (pubKey PublicKey) Encrypt(str string) Block {
-	message := PadBlock(ParseText(str), pubKey.RM.inBits / INTSIZE)
+func (pubKey PublicKey) Encrypt(str string) Bitset {
+	message := PadBlock(ParseText(str), pubKey.RM.inBits)
 
 	return pubKey.RM.Encrypt(message, true)
 }
 
-func (privKey PrivateKey) Decrypt(cipherText Block) Block {
+func (privKey PrivateKey) Decrypt(cipherText Bitset) Bitset {
 	// undo the permutation
-	cipherText = ApplyPerm(cipherText, privKey.perm, true)
+	cipherText = ApplyPermToBitset(cipherText, privKey.perm, true)
 	// apply standard rm decryption
 	cipherText = privKey.RM.Decrypt(cipherText, true)
-
 	// right multiply by C_inv
-	postCipher := Block{}
-	P := privKey.RM.inBits / INTSIZE
+	postCipher := Bitset{}
+	P := privKey.RM.inBits
 	for i := 0; i < len(cipherText); i += P {
-		eword := make(Block, P)
+		eword := make(Bitset, P)
 		copy(eword, cipherText[i:i+P])
 		eword = MatMulVecR(eword, privKey.C_inv)
 
@@ -61,10 +63,17 @@ func (pubKey PublicKey) Write(filePath string) {
 
 	defer f.Close()
 
-	for _, r := range pubKey.RM.M {
-		// f.Write(r)
-		for _, char := range r {
-			f.WriteString(fmt.Sprintf("%02X ", char))
+	f.WriteString(fmt.Sprintf("%d|%d", pubKey.RM.r, pubKey.RM.m))
+
+	f.WriteString("\n")
+
+	for _, row := range pubKey.RM.M {
+		for _, bit := range row {
+			if bit {
+				f.WriteString("1")
+			} else {
+				f.WriteString("0")
+			}
 		}
 		f.WriteString("\n")
 	}
@@ -78,20 +87,30 @@ func (privKey PrivateKey) Write(filePath string) {
 
 	defer f.Close()
 
-	for _, r := range privKey.RM.M {
-		for _, char := range r {
-			f.WriteString(fmt.Sprintf("%02X ", char))
+	// This is probably unnecessary, we could just saze the coefficients of the
+	// Reed Muller Code
+	for _, row := range privKey.RM.M {
+		for _, bit := range row {
+			if bit {
+				f.WriteString("1")
+			} else {
+				f.WriteString("0")
+			}
 		}
 		f.WriteString("\n")
 	}
 	f.WriteString("\n")
 	f.WriteString("\n")
 
-	for _, r:= range privKey.C_inv {
-		for _, char := range r {
-			f.WriteString(fmt.Sprintf("%02X ", char))
+	for _, row := range privKey.C_inv {
+		for _, bit := range row {
+			if bit {
+				f.WriteString("1")
+			} else {
+				f.WriteString("0")
+			}
 		}
-		f.WriteString("\n")		
+		f.WriteString("\n")	
 	}
 	f.WriteString("\n")
 	f.WriteString("\n")
@@ -104,3 +123,50 @@ func (privKey PrivateKey) Write(filePath string) {
 	f.Sync()
 	return
 }
+
+// func ReadPublic2(fname string) (rm PublicKey) {
+// 	b,_ := ioutil.ReadFile(fname)
+
+// 	// type RMCode struct {
+// 	// 	r,m      int
+// 	// 	inBits   int
+// 	// 	outBits  int
+// 	// 	M        []Block
+// 	// 	diffs    [][]int
+// 	// 	errors   int
+// 	// }	
+
+// 	M := []Bitset{}
+
+// 	lines := strings.Split(string(b), "\n")
+// 	for i, l := range lines {
+// 		if len(l) == 0 { continue }
+
+// 		if i == 0 {
+// 			parts := strings.Split(l, "|")
+// 			n, _ := strconv.Atoi(parts[0])
+// 			rm.RM.r = n
+// 			n, _ = strconv.Atoi(parts[1])
+// 			rm.RM.m = n
+// 		} else {
+// 			// Empty line occurs at the end of the file when we use Split.
+// 			hexes := strings.Split(l, " ")
+// 			row := make(Bitset, 0)
+// 			for _, h := range hexes {
+// 				if h == "" {
+// 					continue
+// 				}
+
+// 				i,_ := strconv.ParseInt(h, 16, 16)
+// 				byte := uint8(i)
+// 				row = append(row, byte)
+// 			}
+// 			M = append(M, row)
+// 		}
+// 	}
+// 	rm.RM.M = M
+// 	rm.RM.inBits = len(M)
+// 	rm.RM.outBits = len(M[0])
+
+// 	return rm
+// }

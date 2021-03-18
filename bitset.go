@@ -1,161 +1,140 @@
 package main
 
-const INTSIZE int = 8
-type Block         = []uint8
+type Bitset = []bool
 
-func ReverseBits(n uint8) (rev uint8) {
-	for i := 0; i < INTSIZE; i++ {
-		rev <<= 1
-		if n & 1 == 1 {
-			rev ^= 1
-		}
+func ReverseBitset(bs Bitset) (bsNew Bitset) {
+	bsNew = make(Bitset, len(bs))
 
-		n >>= 1
-  }
-  return rev 
-}
-
-func InvertBits(b Block) Block {
-	ones    := make(Block, len(b))
-	for i := 0; i < len(b); i++ {
-		ones[i]    = 255
+	for i, j := 0, len(bs)-1; i < j; i, j = i+1, j-1 {
+	    bsNew[i], bsNew[j] = bs[j], bs[i]
 	}
 
-	return BlockXOR(ones, b)
-}
-
-func ParityOfBits(b Block) (out bool) {
-	out = false
-	for _, i8 := range b {
-		for i8 > 0 {
-			out = out != ((i8 & 1) == 1) // xor out with lowest bit of i8
-			i8 >>= 1
-		}
-	}
 	return
 }
 
-func SumOfBits(b Block) (ones int) {
-	ones = 0
-	for _, i8 := range b {
-		for i8 > 0 {
-			ones += int(i8 & 1)
-			i8 >>= 1
+func InvertBitset(bs Bitset) (bsNew Bitset) {
+	bsNew = make(Bitset, len(bs))
+
+	for i := 0; i < len(bs); i++ {
+	    bsNew[i] = !bs[i]
+	}
+
+	return	
+}
+
+func ParityOfBitset(bs Bitset) (par bool) {
+	par = false
+	for _, b := range bs {
+		par = (par != b)
+	}
+
+	return
+}
+
+func WeightOfBitset(bs Bitset) (wt int) {
+	wt = 0
+	for _, b := range bs {
+		if b {
+			wt += 1
 		}
 	}
-	return ones
+
+	return
 }
 
-func BlockXOR(b1 Block, b2 Block) (Block) {
+func BitsetXOR(b1 Bitset, b2 Bitset) (xor Bitset) {
 	if len(b1) != len(b2) {
 		//ERROR
 	}
-	N := len(b1)
-	var out = make([]uint8, N)
-	for i := 0; i < N; i++ {
-		out[i] = b1[i] ^ b2[i]
+
+	xor = make(Bitset, len(b1))
+
+	for i := 0; i < len(b1); i++ {
+		xor[i] = b1[i] != b2[i]
 	}
 
-	return out
+	return
 }
 
-func BlockAND(b1 Block, b2 Block) (Block) {
+func BitsetAND(b1 Bitset, b2 Bitset) (and Bitset) {
 	if len(b1) != len(b2) {
 		//ERROR
 	}
-	N := len(b1)
-	var out = make([]uint8, N)
-	for i := 0; i < N; i++ {
-		out[i] = b1[i] & b2[i]
+
+	and = make(Bitset, len(b1))
+
+	for i := 0; i < len(b1); i++ {
+		and[i] = (b1[i] && b2[i])
 	}
 
-	return out
+	return
 }
 
-func BlockDOT(b1 Block, b2 Block) (bool) {
-	return ParityOfBits(BlockAND(b1, b2))
+func BitsetOR(b1 Bitset, b2 Bitset) (or Bitset) {
+	if len(b1) != len(b2) {
+		//ERROR
+	}
+
+	or = make(Bitset, len(b1))
+
+	for i := 0; i < len(b1); i++ {
+		or[i] = (b1[i] || b2[i])
+	}
+
+	return
 }
 
-func BlockAllOnes(b Block) bool {
-	for _, v := range b {
-		if v != 255 { // Careful
+func BitsetDot(b1 Bitset, b2 Bitset) (dot bool) {
+	return ParityOfBitset(BitsetAND(b1, b2))
+}
+
+func BitsetAllTrue(bs Bitset) (bool) {
+	for _, b := range bs {
+		if !b {
 			return false
 		}
 	}
-	return true
+
+	return true 
 }
 
-func BlockFlipTopBit(b Block) Block {
-	b[0] ^= 128 // Careful
+func BitsetVote(bs Bitset, tie bool) bool {
+	if tie {
+		return 2*WeightOfBitset(bs) >= len(bs) 
+	} else {
+		return 2*WeightOfBitset(bs) > len(bs) 
+	}
+}
+
+func BitsetFlipTopBit(b Bitset) Bitset {
+	b[0] = !b[0]
+
 	return b
 }
 
-func BlockMoreOnes(b Block) bool {
-	return (2*SumOfBits(b) / (len(b) * INTSIZE)) >= 1
-}
+func ApplyPermToBitset(bs Bitset, perm []int, forward bool) (pBs Bitset) {
+	bitsPerPerm := len(perm)
+	pBs = make(Bitset, len(bs))
 
-func ToggleIthBit(b Block, i int) {
-	index := i / (1 << INTSIZE)
-	bits := i % INTSIZE
-	mask := uint8(1) << bits
+	for blockId := 0; blockId < len(bs); blockId += bitsPerPerm {
+		for i := 0; i < bitsPerPerm; i++ {
+			if forward {
+				pBs[blockId + perm[i]] = bs[blockId + i]
+			} else {
+				pBs[blockId + i] = bs[blockId + perm[i]]
+			}
+		}
+	}
 
-	b[index] ^= mask
 	return
 }
 
-func GetBitAt(b Block, n int) (bool) {
-	// find the byte
-	byte := n / INTSIZE
-	// find the bit within the byte
-	bit := n % INTSIZE
+func BitsetAllOnes(n int) (bs Bitset) {
+	bs = make(Bitset, n)
 
-	return ( ((b[byte] >> (INTSIZE - bit - 1)) & 1) == 1 )
-}
-
-func SetBitAt(b Block, n int) (Block) {
-	// find the byte
-	byte := n / INTSIZE
-	// find the bit within the byte
-	bit := n % INTSIZE
-
-	b[byte] |= (1 << (INTSIZE - bit - 1))
-
-	return b
-}
-
-func ClearBitAt(b Block, n int) (Block) {
-	// find the byte
-	byte := n / INTSIZE
-	// find the bit within the byte
-	bit := n % INTSIZE
-
-  mask := ^(uint8(1) << bit)
-  b[byte] &= mask
-
-	return b
-}
-
-func ApplyPerm(b Block, perm []int, forward bool) (bNew Block) {
-	bytesPerPerm := len(perm) / INTSIZE
-
-  for blockId := 0; blockId < len(b); blockId += bytesPerPerm {
-		bTemp := make(Block, bytesPerPerm)
-
-		for i := 0; i < len(perm); i++ {
-			if forward {
-				// send bit i to perm[i]
-				if GetBitAt(b[blockId:blockId+bytesPerPerm], i) { // if the bit is one
-					bTemp = SetBitAt(bTemp, perm[i])
-				}
-		  } else {
-				// send bit perm[i] to bit i
-				if GetBitAt(b[blockId:blockId+bytesPerPerm], perm[i]) { // if the bit is one
-					bTemp = SetBitAt(bTemp, i)
-				}
-			}
-		}
-		bNew = append(bNew, bTemp...)
-  }
+	for i := 0; i < n; i++ {
+		bs[i] = true
+	}
 
 	return
 }

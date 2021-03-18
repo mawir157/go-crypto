@@ -4,24 +4,46 @@ import (
 	"fmt"
 )
 
-func ParseText(s string) Block {
-	msg := make(Block, len(s))
-	for i, char := range s {
-		msg[i] = uint8(char)
+func CharToBitset(c rune) (bs Bitset) {
+	bs = make(Bitset, 8)
+
+	for b := 0; b < 8; b++ {
+		bs[b] = ((c >> (7 - b)) & 1) == 1
 	}
+
+	return
+}
+
+func ParseText(s string) Bitset {
+	msg := make(Bitset, 0)
+	for _, char := range s {
+		binChar := CharToBitset(char)
+		msg = append(msg, binChar...)
+	}
+
 	return msg
 }
 
-func DeparseMessage(b Block) string {
+func DeparseMessage(bs Bitset) string {
 	message := ""
-	for _, char := range b {
-		message = message + string(rune(char))
+	byte := uint8(0)
+	for i, b := range bs {
+		byte <<= 1
+		if b {
+			byte += 1
+		}
+
+		if i % 8 == 7 {
+			message = message + string(rune(byte))
+			byte = 0
+		}
 	}
-	return message 
+	return message
 }
 
-func PrintHex(b Block,  newLine bool) {
-	for _, char := range b {
+func PrintHex(b Bitset, newLine bool) {
+	plain := DeparseMessage(b)
+	for _, char := range plain {
 		fmt.Printf("%02X ", char)
 	}
 
@@ -30,7 +52,7 @@ func PrintHex(b Block,  newLine bool) {
 	}
 }
 
-func PadBlock(b Block, n int) Block {
+func PadBlock(b Bitset, n int) Bitset {
 	need := (len(b) % n)
 
 	if need == 0 {
@@ -38,22 +60,29 @@ func PadBlock(b Block, n int) Block {
 	}
 
 	for i := 0; i < n - need; i++ {
-		b = append(b, uint8(n - need))
+		b = append(b, true)
 	}
 
 	return b
 }
 
-func PrintBin(b Block, newLine bool) {
-	for _, char := range b {
-		fmt.Printf("%08b ", char)
+func PrintBin(bs Bitset, newLine bool) {
+	for i, b := range bs {
+		if b {
+			fmt.Print("1")
+		} else {
+			fmt.Print("0")
+		}
+		if i % 8 == 7 {
+			fmt.Print(" ")
+		}
 	}
 	if newLine {
 		fmt.Println("")
 	}
 }
 
-func PrintAscii(b Block, newLine bool) {
+func PrintAscii(b Bitset, newLine bool) {
 	fmt.Print(DeparseMessage(b))
 	if newLine {
 		fmt.Println("")
