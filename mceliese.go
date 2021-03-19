@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	// "io/ioutil"
+	"io/ioutil"
 	"os"
-	// "strconv"
-	// "strings"
+	"strconv"
+	"strings"
 )
 
 type PublicKey struct {
@@ -64,10 +64,6 @@ func (pubKey PublicKey) Write(filePath string) {
 
 	defer f.Close()
 
-	f.WriteString(fmt.Sprintf("%d|%d", pubKey.RM.r, pubKey.RM.m))
-
-	f.WriteString("\n")
-
 	for _, row := range pubKey.RM.M {
 		for _, bit := range row {
 			if bit {
@@ -89,20 +85,8 @@ func (privKey PrivateKey) Write(filePath string) {
 
 	defer f.Close()
 
-	// This is probably unnecessary, we could just saze the coefficients of the
-	// Reed Muller Code
-	for _, row := range privKey.RM.M {
-		for _, bit := range row {
-			if bit {
-				f.WriteString("1")
-			} else {
-				f.WriteString("0")
-			}
-		}
-		f.WriteString("\n")
-	}
-	f.WriteString("\n")
-	f.WriteString("\n")
+	// Save the coefficients of the Reed-Muller code
+	f.WriteString(fmt.Sprintf("RM|%d|%d\n\n", privKey.RM.r, privKey.RM.m))
 
 	for _, row := range privKey.C_inv {
 		for _, bit := range row {
@@ -115,7 +99,6 @@ func (privKey PrivateKey) Write(filePath string) {
 		f.WriteString("\n")	
 	}
 	f.WriteString("\n")
-	f.WriteString("\n")
 
 	for _, i := range privKey.perm {
 		f.WriteString(fmt.Sprintf("%d ", i))
@@ -126,49 +109,85 @@ func (privKey PrivateKey) Write(filePath string) {
 	return
 }
 
-// func ReadPublic2(fname string) (rm PublicKey) {
-// 	b,_ := ioutil.ReadFile(fname)
+func ReadPublic(fname string) (pubKey PublicKey) {
+	b,_ := ioutil.ReadFile(fname)
 
-// 	// type RMCode struct {
-// 	// 	r,m      int
-// 	// 	inBits   int
-// 	// 	outBits  int
-// 	// 	M        []Block
-// 	// 	diffs    [][]int
-// 	// 	errors   int
-// 	// }	
+	M := []Bitset{}
 
-// 	M := []Bitset{}
+	lines := strings.Split(string(b), "\n")
+	for _, l := range lines {
+		if len(l) == 0 { continue }
 
-// 	lines := strings.Split(string(b), "\n")
-// 	for i, l := range lines {
-// 		if len(l) == 0 { continue }
+		row := make(Bitset, len(l))
+		for j, char := range l {
+			if char == rune('1') {
+				row[j] = true
+			}
+		} 
+		M = append(M, row)
+	}
 
-// 		if i == 0 {
-// 			parts := strings.Split(l, "|")
-// 			n, _ := strconv.Atoi(parts[0])
-// 			rm.RM.r = n
-// 			n, _ = strconv.Atoi(parts[1])
-// 			rm.RM.m = n
-// 		} else {
-// 			// Empty line occurs at the end of the file when we use Split.
-// 			hexes := strings.Split(l, " ")
-// 			row := make(Bitset, 0)
-// 			for _, h := range hexes {
-// 				if h == "" {
-// 					continue
-// 				}
+	pubKey.RM.M = M
+	pubKey.RM.inBits = len(M)
+	pubKey.RM.outBits = len(M[0])
+	pubKey.RM.m = Log2(pubKey.RM.outBits)
 
-// 				i,_ := strconv.ParseInt(h, 16, 16)
-// 				byte := uint8(i)
-// 				row = append(row, byte)
-// 			}
-// 			M = append(M, row)
-// 		}
-// 	}
-// 	rm.RM.M = M
-// 	rm.RM.inBits = len(M)
-// 	rm.RM.outBits = len(M[0])
+	rows := 0
+	for pubKey.RM.r = 0; pubKey.RM.r < pubKey.RM.m; pubKey.RM.r++ {
+		rows += Choose(pubKey.RM.m, pubKey.RM.r)
 
-// 	return rm
-// }
+		if (rows == pubKey.RM.inBits) {
+			break
+		}
+	}
+
+	return
+}
+
+func ReadPrivate(fname string) (privKey PrivateKey) {
+	b,_ := ioutil.ReadFile(fname)
+
+	mode := 0
+
+	lines := strings.Split(string(b), "\n")
+	for _, l := range lines {
+		if len(l) == 0 { 
+			mode++
+			continue
+		}
+
+		if (mode == 0) {
+			parts := strings.Split(l, "|")
+			// BlockCiphetype := parts[0] // should always be "RM"
+			r, _ := strconv.Atoi(parts[1])
+			m, _ := strconv.Atoi(parts[2])
+
+			privKey.RM = ReedMuller(r,m)
+		}
+
+		if (mode == 1) {
+			row := make(Bitset, len(l))
+			for j, char := range l {
+				if char == rune('1') {
+					row[j] = true
+				}
+			} 
+			privKey.C_inv = append(privKey.C_inv, row)
+		}
+
+		if (mode == 2) {
+			parts := strings.Split(l, " ")
+			for _, p := range parts {
+				if p == "" {
+					continue
+				}
+
+				n, _ := strconv.Atoi(p)
+				privKey.perm = append(privKey.perm, n)
+			}
+		}
+
+	}
+
+	return
+}

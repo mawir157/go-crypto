@@ -59,10 +59,6 @@ func BitsetXOR(b1 Bitset, b2 Bitset) (xor Bitset) {
 }
 
 func BitsetAND(b1 Bitset, b2 Bitset) (and Bitset) {
-	if len(b1) != len(b2) {
-		//ERROR
-	}
-
 	and = make(Bitset, len(b1))
 
 	for i := 0; i < len(b1); i++ {
@@ -72,19 +68,7 @@ func BitsetAND(b1 Bitset, b2 Bitset) (and Bitset) {
 	return
 }
 
-func BitsetANDRef(b1 Bitset, b2 Bitset) (Bitset) {
-	for i := 0; i < len(b1); i++ {
-		b1[i] = b1[i] && b2[i]
-	}
-
-	return b1
-}
-
 func BitsetOR(b1 Bitset, b2 Bitset) (or Bitset) {
-	if len(b1) != len(b2) {
-		//ERROR
-	}
-
 	or = make(Bitset, len(b1))
 
 	for i := 0; i < len(b1); i++ {
@@ -94,7 +78,7 @@ func BitsetOR(b1 Bitset, b2 Bitset) (or Bitset) {
 	return
 }
 
-func BitsetDot(b1 Bitset, b2 Bitset) (dot bool) {
+func BitsetDOT(b1 Bitset, b2 Bitset) (dot bool) {
 	dot = false
 	for i := 0; i < len(b1); i++ {
 		if (b1[i] && b2[i]) {

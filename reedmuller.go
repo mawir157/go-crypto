@@ -111,7 +111,7 @@ func (rm RMCode) Decrypt(msg Bitset, fixErrors bool) (ptxt Bitset) {
 			chrVecs := charVectors[j]
 			votesForOne := 0
 			for _, cv := range chrVecs {
-				if BitsetDot(cv, eword) {
+				if BitsetDOT(cv, eword) {
 					votesForOne += 1
 				}
 			}
@@ -193,10 +193,11 @@ func (rm RMCode) PermuteCols(perm []int) (RMCode) {
 	              outBits:rm.outBits}	
 }
 
-
 func (rm RMCode) Print(showMatrix bool) {
-	fmt.Printf("In bits = %d | ", rm.inBits)
-	fmt.Printf("Out bits = %d | ", rm.outBits)
+	fmt.Printf("(%d, %d) | In bits = %d | Out bits = %d | ",
+	           rm.r, rm.m, rm.inBits, rm.outBits)
+	// fmt.Printf("In bits = %d | ", rm.inBits)
+	// fmt.Printf("Out bits = %d | ", rm.outBits)
 	fmt.Printf("Expansion ratio = %f\n\n", float64(rm.outBits)/float64(rm.inBits))
 
 	if showMatrix {

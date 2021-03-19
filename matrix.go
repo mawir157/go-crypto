@@ -84,7 +84,7 @@ func MatMulMat(M []Bitset, C []Bitset) (C_new []Bitset) {
 		rowNew := make(Bitset, len(C[0]))
 		for i := 0; i < len(C[0]); i++ {
 			col := Column(C, i)
-			rowNew[i] = BitsetDot(row, col)
+			rowNew[i] = BitsetDOT(row, col)
 		}	
 		C_new[j] = rowNew
 	}
@@ -97,7 +97,7 @@ func MatMulVecR(V Bitset, M []Bitset) (Bitset) {
 
 	for i := 0; i < len(M[0]); i++ {
 		col := Column(M, i)
-		V_new[i] = BitsetDot(V, col)
+		V_new[i] = BitsetDOT(V, col)
 	}	
 
 	return V_new

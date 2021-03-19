@@ -10,18 +10,18 @@ var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 func main() {
 
-  flag.Parse()
-  if *cpuprofile != "" {
-      f, err := os.Create(*cpuprofile)
-      if err != nil {
-          log.Fatal("could not create CPU profile: ", err)
-      }
-      defer f.Close() // error handling omitted for example
-      if err := pprof.StartCPUProfile(f); err != nil {
-          log.Fatal("could not start CPU profile: ", err)
-      }
-      defer pprof.StopCPUProfile()
-  }
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	textMessage :=
 `It was the best of times, it was the worst of times, it was the age of wisdom,
@@ -34,28 +34,30 @@ that some of its noisiest authorities insisted on its being received, for good
 or for evil, in the superlative degree of comparison only.`
 
 	public, private := generateKeyPair(2, 12)
+
 	public.Write("mce.pub")
 	private.Write("mce.pri")
 
-	// public2 := ReadPublic("mce.pub")
-	cipherText := public.Encrypt(textMessage)
+	public2 := ReadPublic("mce.pub")
+	private2 := ReadPrivate("mce.pri")
+
+	cipherText := public2.Encrypt(textMessage)
 	PrintHex(cipherText, true)
-	// cipherText := public2.Encrypt(textMessage)
 	
-	plaintext := private.Decrypt(cipherText)
+	plaintext := private2.Decrypt(cipherText)
 	PrintAscii(plaintext, true)
 
-  if *memprofile != "" {
-      f, err := os.Create(*memprofile)
-      if err != nil {
-          log.Fatal("could not create memory profile: ", err)
-      }
-      defer f.Close() // error handling omitted for example
-      runtime.GC() // get up-to-date statistics
-      if err := pprof.WriteHeapProfile(f); err != nil {
-          log.Fatal("could not write memory profile: ", err)
-      }
-  }
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 
  	return
 }
