@@ -5,6 +5,7 @@ import "log"
 import "os"
 import "runtime/pprof"
 import "runtime"
+
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
@@ -23,6 +24,25 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+// key := []byte{0x49, 0x20, 0xe2, 0x99, 0xa5, 0x20, 0x52, 0x61,
+//               0x64, 0x69, 0x6f, 0x47, 0x61, 0x74, 0x75 ,0x6e}
+// aes := MakeAES(key)
+// fmt.Println(aes)
+// expanded := aes.keyExpansion()
+
+// for i := 0; i < len(expanded); i++ {
+// 	if i % 4 == 0 {
+// 		fmt.Printf("%02d: ", i/4)
+// 	}
+// 	for _, b := range expanded[i] {
+// 		fmt.Printf("%02x ",b )
+// 	}
+// 	if i % 4 == 3 {
+// 		fmt.Printf("\n")
+// 	}
+// }
+
+
 	textMessage :=
 `It was the best of times, it was the worst of times, it was the age of wisdom,
 it was the age of foolishness, it was the epoch of belief, it was the epoch of
@@ -33,7 +53,7 @@ direct the other way – in short, the period was so far like the present period
 that some of its noisiest authorities insisted on its being received, for good
 or for evil, in the superlative degree of comparison only.`
 
-	public, private := generateKeyPair(2, 12)
+	public, private := generateKeyPair(2, 13)
 
 	public.Write("mce.pub")
 	private.Write("mce.pri")

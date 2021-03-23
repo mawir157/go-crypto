@@ -157,11 +157,12 @@ func getCharVectors(rm RMCode, row int) (chars []Bitset) {
 		fold := rm.M[index] // grab the ith row of the r-m matrix
 		notFold := InvertBitset(fold) //
 
-		temp := []Bitset{}
-		for _, v := range chars {
-			// temp = append(temp, BitsetAND(v, fold))
-			temp = append(temp, BitsetAND(v, fold), BitsetAND(v, notFold))
+		temp := make([]Bitset, 2*len(chars))
+		for i, v := range chars {
+			temp[2*i]     = BitsetAND(v, fold)
+			temp[2*i + 1] = BitsetAND(v, notFold)
 		}
+
 		chars = temp
 	}
 
@@ -196,8 +197,6 @@ func (rm RMCode) PermuteCols(perm []int) (RMCode) {
 func (rm RMCode) Print(showMatrix bool) {
 	fmt.Printf("(%d, %d) | In bits = %d | Out bits = %d | ",
 	           rm.r, rm.m, rm.inBits, rm.outBits)
-	// fmt.Printf("In bits = %d | ", rm.inBits)
-	// fmt.Printf("Out bits = %d | ", rm.outBits)
 	fmt.Printf("Expansion ratio = %f\n\n", float64(rm.outBits)/float64(rm.inBits))
 
 	if showMatrix {

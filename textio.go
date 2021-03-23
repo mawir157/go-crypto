@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+  "strings"
 )
 
 func CharToBitset(c rune) (bs Bitset) {
@@ -25,7 +26,8 @@ func ParseText(s string) Bitset {
 }
 
 func DeparseMessage(bs Bitset) string {
-	message := ""
+	var sb strings.Builder
+	// message := ""
 	byte := uint8(0)
 	for i, b := range bs {
 		byte <<= 1
@@ -34,17 +36,18 @@ func DeparseMessage(bs Bitset) string {
 		}
 
 		if i % 8 == 7 {
-			message = message + string(rune(byte))
+			sb.WriteString(string(rune(byte)))
+			// message = message + string(rune(byte))
 			byte = 0
 		}
 	}
-	return message
+	return sb.String()
 }
 
 func PrintHex(b Bitset, newLine bool) {
 	plain := DeparseMessage(b)
 	for _, char := range plain {
-		fmt.Printf("%02X ", char)
+		fmt.Printf("%02x ", char)
 	}
 
 	if newLine {
