@@ -65,7 +65,6 @@ func (code AESCode) keyExpansion() (expanded []Word) {
 
 	expanded = make([]Word, 4 * code.numberOfRounds)
 	n := len(code.key) / 4
-	fmt.Printf("%d\n", n)
 
 	for i := 0; i < n; i++ {
 		copy(expanded[i][:], code.key[4*i:4*(i + 1)])
@@ -123,49 +122,159 @@ func (code AESCode) xor(w1, w2 Word) (w3 Word) {
 	return
 }
 
-func (code AESCode) mixColumns(block *[]byte) {
-	
-} 
+func (code AESCode) mixColumns(w Word) (new Word) {
+	b := w // make a copy of w
+
+	for i := 0; i < 4; i++ {
+		h := (w[i] >> 7) & 1
+		b[i] = (w[i] << 1)
+		b[i] = b[i] ^ (h * 0x1b)
+	}
+
+	new[0] = b[0] ^ w[3] ^ w[2] ^ b[1] ^ w[1]; /* 2 * a0 + a3 + a2 + 3 * a1 */
+	new[1] = b[1] ^ w[0] ^ w[3] ^ b[2] ^ w[2]; /* 2 * a1 + a0 + a3 + 3 * a2 */
+	new[2] = b[2] ^ w[1] ^ w[0] ^ b[3] ^ w[3]; /* 2 * a2 + a1 + a0 + 3 * a3 */
+	new[3] = b[3] ^ w[2] ^ w[1] ^ b[0] ^ w[0]; /* 2 * a3 + a2 + a1 + 3 * a0 */
+
+	return
+}
+
+func (code AESCode) shiftRow(ws [4]Word) (new [4]Word) {
+
+	new[0][0], new[1][0], new[2][0], new[3][0] = ws[0][0], ws[1][0], ws[2][0], ws[3][0]
+	new[0][1], new[1][1], new[2][1], new[3][1] = ws[1][1], ws[2][1], ws[3][1], ws[0][1]
+	new[0][2], new[1][2], new[2][2], new[3][2] = ws[2][2], ws[3][2], ws[0][2], ws[1][2]
+	new[0][3], new[1][3], new[2][3], new[3][3] = ws[3][3], ws[0][3], ws[1][3], ws[2][3]
+
+	return
+}
 
 // func (code AESCode) Encrypt(msg []byte) ([]byte) {
 
 // }
 
 // we encrypt 4 words (128 bits at a time)
-func (code AESCode) blockEncrypt(w []Word) ([]Word) {
+func (code AESCode) blockEncrypt(w [4]Word) ([4]Word) {
 	// KeyExpansion – round keys are derived from the cipher key using the AES key schedule. AES requires a separate 128-bit round key block for each round plus one more.
 	keys := code.keyExpansion()
+
+																						// fmt.Println("round keys")
+																						// for i, k := range keys {
+																						// 	fmt.Printf("%02x ", k )
+																						// 	if i % 4 == 3 {
+																						// 		fmt.Printf("\n")
+																						// 	}
+																						// }
+																						// fmt.Printf("\n")
+
+																						// fmt.Println("Plaintext")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+
 	// Initial round key addition:
 		// AddRoundKey – each byte of the state is combined with a byte of the round key using bitwise xor.
 	for i := 0; i < 4; i++ {
 		w[i] = code.xor(w[i], keys[i])
 	}
 
+																						// fmt.Println("After Round 0")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+																						// fmt.Printf("\n")
+
 	// 9, 11 or 13 rounds:
-	for i := 1; i < code.numberOfRounds; i++ {
+	for round := 1; round < code.numberOfRounds-1; round++ {
+																						// fmt.Printf("Round %d:\n", round)
+																						// fmt.Printf("\tIntial word - ")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
     // SubBytes – a non-linear substitution step where each byte is replaced with another according to a lookup table.
 		for j := range w {
 			w[j] = code.subWord(w[j])
 		}
+
+																						// fmt.Printf("SubBytes\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+
     // ShiftRows – a transposition step where the last three rows of the state are shifted cyclically a certain number of steps.
+		w = code.shiftRow(w)
+
+																						// fmt.Printf("ShiftRows\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+
     // MixColumns – a linear mixing operation which operates on the columns of the state, combining the four bytes in each column.
+		for j := 0; j < 4; j++ {
+			w[j] = code.mixColumns(w[j])
+		}
+
+																						// fmt.Printf("MixColumns\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+
 		// AddRoundKey
 		for j := 0; j < 4; j++ {
-			w[j] = code.xor(w[j], keys[4*i + j])
+			w[j] = code.xor(w[j], keys[4*round + j])
 		}
-	}
-	
 
+																						// fmt.Printf("AddRoundKey\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+																						// fmt.Printf("\n")
+	}
+
+
+	
+																						// fmt.Printf("Final Round:\n")
+																						// fmt.Printf("\tIntial word - ")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
 	// Final round (making 10, 12 or 14 rounds in total):
     // SubBytes
     for j := range w {
 			w[j] = code.subWord(w[j])
 		}
+																						// fmt.Printf("SubBytes\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
     // ShiftRows
+		w = code.shiftRow(w)
+
+																						// fmt.Printf("ShiftRows\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
     // AddRoundKey
 		for j := 0; j < 4; j++ {
-			w[j] = code.xor(w[j], keys[4*(code.numberOfRounds - 1) + j])
+			w[j] = code.xor(w[j], keys[4*(code.numberOfRounds-1) + j])
 		}
+
+																						// fmt.Printf("AddRoundKey\n")
+																						// for _, b := range w {
+																						// 	fmt.Printf("%02x ", b )
+																						// }
+																						// fmt.Printf("\n")
+																						// fmt.Printf("\n")
 
     return w
 }
