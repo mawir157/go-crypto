@@ -27,7 +27,6 @@ func ParseText(s string) Bitset {
 
 func DeparseMessage(bs Bitset) string {
 	var sb strings.Builder
-	// message := ""
 	byte := uint8(0)
 	for i, b := range bs {
 		byte <<= 1
@@ -37,7 +36,6 @@ func DeparseMessage(bs Bitset) string {
 
 		if i % 8 == 7 {
 			sb.WriteString(string(rune(byte)))
-			// message = message + string(rune(byte))
 			byte = 0
 		}
 	}

@@ -64,20 +64,26 @@ func (code AESCode) keyExpansion() (expanded []Word) {
 	rc := Word{0, 0, 0, 0}
 
 	expanded = make([]Word, 4 * code.numberOfRounds)
+	n := len(code.key) / 4
+	fmt.Printf("%d\n", n)
 
-	for i := 0; i < 4; i++ {
-		copy(expanded[i][:], code.key[4*i:4*i + 4])
+	for i := 0; i < n; i++ {
+		copy(expanded[i][:], code.key[4*i:4*(i + 1)])
 	}
 
-	for i := 4; i < 4 * code.numberOfRounds; i++ {
+	for i := n; i < 4 * code.numberOfRounds; i++ {
 		temp := expanded[i-1]
 
-		if (i % 4 == 0) {
-			rc[0] = rCons[i/4]
+		if (i % n == 0) {
+			rc[0] = rCons[i/n]
 			temp = code.xor(code.subWord(code.rotWord(temp)), rc)
 		}
 
-		expanded[i] = code.xor(expanded[i - 4], temp)
+		if (n == 8) && (i % n == 4) { // this can only ever be hit in 256 bit case
+			temp = code.subWord(temp)
+		}
+
+		expanded[i] = code.xor(expanded[i - n], temp)
 	}
 
 	return
@@ -120,26 +126,46 @@ func (code AESCode) xor(w1, w2 Word) (w3 Word) {
 func (code AESCode) mixColumns(block *[]byte) {
 	
 } 
-/*
-func (code AESCode) Encrypt(msg []byte) ([]byte) {
 
-}
- 
-func (code AESCode) blockEncrypt(msg []byte) ([]byte) {
+// func (code AESCode) Encrypt(msg []byte) ([]byte) {
+
+// }
+
+// we encrypt 4 words (128 bits at a time)
+func (code AESCode) blockEncrypt(w []Word) ([]Word) {
 	// KeyExpansion – round keys are derived from the cipher key using the AES key schedule. AES requires a separate 128-bit round key block for each round plus one more.
-	
+	keys := code.keyExpansion()
 	// Initial round key addition:
 		// AddRoundKey – each byte of the state is combined with a byte of the round key using bitwise xor.
+	for i := 0; i < 4; i++ {
+		w[i] = code.xor(w[i], keys[i])
+	}
 
 	// 9, 11 or 13 rounds:
+	for i := 1; i < code.numberOfRounds; i++ {
     // SubBytes – a non-linear substitution step where each byte is replaced with another according to a lookup table.
+		for j := range w {
+			w[j] = code.subWord(w[j])
+		}
     // ShiftRows – a transposition step where the last three rows of the state are shifted cyclically a certain number of steps.
     // MixColumns – a linear mixing operation which operates on the columns of the state, combining the four bytes in each column.
-    // AddRoundKey
+		// AddRoundKey
+		for j := 0; j < 4; j++ {
+			w[j] = code.xor(w[j], keys[4*i + j])
+		}
+	}
+	
 
 	// Final round (making 10, 12 or 14 rounds in total):
     // SubBytes
+    for j := range w {
+			w[j] = code.subWord(w[j])
+		}
     // ShiftRows
     // AddRoundKey
+		for j := 0; j < 4; j++ {
+			w[j] = code.xor(w[j], keys[4*(code.numberOfRounds - 1) + j])
+		}
+
+    return w
 }
-*/

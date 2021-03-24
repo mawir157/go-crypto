@@ -1,6 +1,7 @@
 package main
 
 import "flag"
+import "fmt"
 import "log"
 import "os"
 import "runtime/pprof"
@@ -26,23 +27,30 @@ func main() {
 
 // key := []byte{0x49, 0x20, 0xe2, 0x99, 0xa5, 0x20, 0x52, 0x61,
 //               0x64, 0x69, 0x6f, 0x47, 0x61, 0x74, 0x75 ,0x6e}
-// aes := MakeAES(key)
-// fmt.Println(aes)
-// expanded := aes.keyExpansion()
+// key := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+//               0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+//               0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17}
+key := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+              0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+              0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+              0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+aes := MakeAES(key)
+fmt.Println(aes)
+expanded := aes.keyExpansion()
 
-// for i := 0; i < len(expanded); i++ {
-// 	if i % 4 == 0 {
-// 		fmt.Printf("%02d: ", i/4)
-// 	}
-// 	for _, b := range expanded[i] {
-// 		fmt.Printf("%02x ",b )
-// 	}
-// 	if i % 4 == 3 {
-// 		fmt.Printf("\n")
-// 	}
-// }
+for i := 0; i < len(expanded); i++ {
+	if i % 4 == 0 {
+		fmt.Printf("%02d: ", i/4)
+	}
+	for _, b := range expanded[i] {
+		fmt.Printf("%02x ",b )
+	}
+	if i % 4 == 3 {
+		fmt.Printf("\n")
+	}
+}
 
-
+/*
 	textMessage :=
 `It was the best of times, it was the worst of times, it was the age of wisdom,
 it was the age of foolishness, it was the epoch of belief, it was the epoch of
@@ -66,7 +74,7 @@ or for evil, in the superlative degree of comparison only.`
 	
 	plaintext := private2.Decrypt(cipherText)
 	PrintAscii(plaintext, true)
-
+*/
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
 		if err != nil {
