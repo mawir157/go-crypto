@@ -1,7 +1,7 @@
 package main
 
 import "flag"
-// import "fmt"
+import "fmt"
 import "log"
 import "os"
 import "runtime/pprof"
@@ -44,10 +44,7 @@ func main() {
 // 											  Word{0x10, 0x12, 0x14, 0x16},
 // 										    Word{0x18, 0x20, 0x22, 0x24}, }                       
 
-// aes_key := []Word{ Word{0x54, 0x68, 0x61, 0x74}, 
-// 									 Word{0x73, 0x20, 0x6D, 0x79},
-//                    Word{0x20, 0x4B, 0x75, 0x6E}, 
-//                    Word{0x67, 0x20, 0x46, 0x75}, }
+
 
 // aes2 := MakeAES(aes_key)
 // cipher := aes2.blockEncrypt(aes_message)
@@ -58,7 +55,7 @@ func main() {
 
 // aesTest("../tests/ECBVarTxt128.rsp")
 // aesTest("../tests/ECBVarTxt192.rsp")
-aesTest("../tests/ECBVarTxt256.rsp")
+// aesTest("../tests/ECBVarTxt256.rsp")
 
 // fmt.Println(aes_message)
 // m1 := aes2.mixColumns(aes_message[3], true)
@@ -66,7 +63,7 @@ aesTest("../tests/ECBVarTxt256.rsp")
 // m2 := aes2.mixColumns(m1, false)
 // fmt.Println(m2)
 
-/*
+
 	textMessage :=
 `It was the best of times, it was the worst of times, it was the age of wisdom,
 it was the age of foolishness, it was the epoch of belief, it was the epoch of
@@ -77,7 +74,7 @@ direct the other way – in short, the period was so far like the present period
 that some of its noisiest authorities insisted on its being received, for good
 or for evil, in the superlative degree of comparison only.`
 
-	public, private := generateKeyPair(2, 13)
+	public, private := generateKeyPair(2, 11)
 
 	public.Write("mce.pub")
 	private.Write("mce.pri")
@@ -90,7 +87,21 @@ or for evil, in the superlative degree of comparison only.`
 	
 	plaintext := private2.Decrypt(cipherText)
 	PrintAscii(plaintext, true)
-*/
+	fmt.Println("")
+
+	aes_key := []Word{ Word{0x54, 0x68, 0x61, 0x74}, 
+										 Word{0x73, 0x20, 0x6D, 0x79},
+	                   Word{0x20, 0x4B, 0x75, 0x6E}, 
+	                   Word{0x67, 0x20, 0x46, 0x75}, }
+	aes := MakeAES(aes_key)
+	
+	aesPlainText := ParseForAES(textMessage)
+	aesCipherText := aes.Encrypt(aesPlainText)
+	aesDecodedText := aes.Decrypt(aesCipherText)
+
+	fmt.Println(DearseForAES(aesDecodedText))
+	fmt.Println("")
+
 	if *memprofile != "" {
 		f, err := os.Create(*memprofile)
 		if err != nil {

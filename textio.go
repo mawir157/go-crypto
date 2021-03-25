@@ -27,6 +27,47 @@ func ParseText(s string) Bitset {
 	return msg
 }
 
+func ParseForAES(s string) []Word {
+	msg := make([]Word, 0)
+	counter := 0
+	var w Word
+	for _, char := range s {
+		w[counter] = byte(char)
+		counter++
+		if counter == 4 {
+			counter = 0
+			msg = append(msg, w)
+		}
+	}
+
+	if counter != 0 {
+		for i := counter; i < 4; i++ {
+			w[i] = 0
+		}
+		msg = append(msg, w)
+	}
+
+	if len(msg) % 4 != 0 {
+		pad := 4 - (len(msg) % 4)
+		for i := 0; i < pad; i++ {
+			msg = append(msg, Word{0,0,0,0})
+		}	
+	}
+	return msg
+}
+
+func DearseForAES(ws []Word) (s string)  {
+	var sb strings.Builder
+
+	for _, w := range ws {
+		for _, b := range w {
+			sb.WriteString(string(rune(b)))
+		}
+	}
+
+	return sb.String()
+}
+
 func DeparseMessage(bs Bitset) string {
 	var sb strings.Builder
 	byte := uint8(0)
