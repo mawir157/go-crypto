@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"encoding/hex"
   "strings"
 )
 
@@ -88,4 +90,73 @@ func PrintAscii(b Bitset, newLine bool) {
 	if newLine {
 		fmt.Println("")
 	}
+}
+
+func ParseHex(s string) ([]Word) {
+	parsed := make([]Word, 0)
+
+	data, err := hex.DecodeString(s)
+	if err != nil { panic(err) }
+
+	for i := 0; i < len(data); i += 4 {
+		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
+	}
+
+	return parsed
+}
+
+
+func aesTest(fname string) {
+	fmt.Println(fname)
+
+	b, err := ioutil.ReadFile(fname)
+	if err != nil { return }
+
+	lines := strings.Split(string(b), "\n")
+
+	mode := true
+	for i := 9; i < len(lines); i++ {
+		if (lines[i] == "[DECRYPT]\r") { 
+			fmt.Println("Changing mode")
+			mode = false
+			i += 2
+		}
+
+		if len(lines[i]) == 0 { break }
+
+		parts := strings.Split(lines[i], " = ")
+		fmt.Println(lines[i])
+		i++
+
+		parts = strings.Split(lines[i], " = ")
+		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		fmt.Println(len(aes_key))
+		i++
+		aes2 := MakeAES(aes_key)
+
+		parts = strings.Split(lines[i], " = ")
+		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		i++
+
+		if mode {
+			cipher := aes2.Encrypt(aes_message)
+			fmt.Printf("CIPHERTEXT = ")
+			for _, b := range cipher {
+				fmt.Printf("%02x", b )
+			}
+		} else {
+			cipher := aes2.Decrypt(aes_message)
+			fmt.Printf("FLAINTEXT = ")
+			for _, b := range cipher {
+				fmt.Printf("%02x", b )
+			}
+		}
+		fmt.Printf("\n")
+		fmt.Println(lines[i])
+		i++
+
+		fmt.Println("=============================================================")
+	}
+
+	return 
 }
