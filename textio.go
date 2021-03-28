@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"encoding/hex"
-  "strings"
+	"strings"
 )
 
 func CharToBitset(c rune) (bs Bitset) {
@@ -56,7 +56,7 @@ func ParseForAES(s string) []Word {
 	return msg
 }
 
-func DearseForAES(ws []Word) (s string)  {
+func DearseForAES(ws []Word) (s string) {
 	var sb strings.Builder
 
 	for _, w := range ws {
@@ -146,8 +146,19 @@ func ParseHex(s string) ([]Word) {
 	return parsed
 }
 
+func compareSlice(ws1, ws2 []Word) bool {
+	if len(ws1) != len(ws2) {
+		return false
+	}
+	for i, v := range ws1 {
+		if v != ws2[i] {
+			return false
+		}
+	}
+	return true	
+}
 
-func aesTest(fname string) {
+func aesECBTest(fname string) {
 	fmt.Println(fname)
 
 	b, err := ioutil.ReadFile(fname)
@@ -157,47 +168,112 @@ func aesTest(fname string) {
 
 	mode := true
 	for i := 9; i < len(lines); i++ {
-		if (lines[i] == "[DECRYPT]\r") { 
-			fmt.Println("Changing mode")
+		if (lines[i] == "[DECRYPT]\r") {
 			mode = false
 			i += 2
 		}
 
 		if len(lines[i]) == 0 { break }
 
-		parts := strings.Split(lines[i], " = ")
-		fmt.Println(lines[i])
+		parts := strings.Split(lines[i], " = ") // COUNT
 		i++
 
-		parts = strings.Split(lines[i], " = ")
+		parts = strings.Split(lines[i], " = ") // KEY
 		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-		fmt.Println(len(aes_key))
 		i++
-		aes2 := MakeAES(aes_key)
+		aes := MakeAES(aes_key)
 
-		parts = strings.Split(lines[i], " = ")
+		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
 		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
 		i++
 
+		var cipher = make([]Word, 0)
+
 		if mode {
-			cipher := aes2.Encrypt(aes_message)
-			fmt.Printf("CIPHERTEXT = ")
-			for _, b := range cipher {
-				fmt.Printf("%02x", b )
-			}
+			cipher = ECBEncrypt(aes, aes_message)
 		} else {
-			cipher := aes2.Decrypt(aes_message)
-			fmt.Printf("FLAINTEXT = ")
+			cipher = ECBDecrypt(aes, aes_message)
+		}
+
+		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
+		compare := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+
+		if (!compareSlice(cipher, compare)) {
+			fmt.Printf("Failed!\n")
 			for _, b := range cipher {
 				fmt.Printf("%02x", b )
 			}
+			fmt.Printf("\n")
+			for _, b := range compare {
+				fmt.Printf("%02x", b )
+			}
+			fmt.Printf("\n")
 		}
-		fmt.Printf("\n")
-		fmt.Println(lines[i])
+
+		i++
+	}
+	return
+}
+
+func aesCBCTest(fname string) {
+	fmt.Println(fname)
+
+	b, err := ioutil.ReadFile(fname)
+	if err != nil { return }
+
+	lines := strings.Split(string(b), "\n")
+
+	mode := true
+	for i := 9; i < len(lines); i++ {
+		if (lines[i] == "[DECRYPT]\r") {
+			mode = false
+			i += 2
+		}
+
+		if len(lines[i]) == 0 { break }
+
+		parts := strings.Split(lines[i], " = ") // COUNT
 		i++
 
-		fmt.Println("=============================================================")
-	}
+		parts = strings.Split(lines[i], " = ") // KEY
+		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		i++
+		aes := MakeAES(aes_key)
 
-	return 
+		parts = strings.Split(lines[i], " = ") // IV
+		var iv [4]Word
+		temp := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		copy(iv[:], temp)		
+		i++
+
+		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
+		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		i++
+
+		var cipher = make([]Word, 0)
+
+		if mode {
+			cipher = CBCEncrypt(aes, iv, aes_message)
+		} else {
+			cipher = CBCDecrypt(aes, iv, aes_message)
+		}
+
+		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
+		compare := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+
+		if (!compareSlice(cipher, compare)) {
+			fmt.Printf("Failed!\n")
+			for _, b := range cipher {
+				fmt.Printf("%02x", b )
+			}
+			fmt.Printf("\n")
+			for _, b := range compare {
+				fmt.Printf("%02x", b )
+			}
+			fmt.Printf("\n")
+		}
+
+		i++
+	}
+	return
 }
