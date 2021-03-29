@@ -1,9 +1,10 @@
-package main
+package jmtcrypto
 
 import (
 	"fmt"
 	"io/ioutil"
 	"encoding/hex"
+	"encoding/base64"
 	"strings"
 )
 
@@ -56,7 +57,7 @@ func ParseForAES(s string) []Word {
 	return msg
 }
 
-func DearseForAES(ws []Word) (s string) {
+func DeparseForAES(ws []Word) (s string) {
 	var sb strings.Builder
 
 	for _, w := range ws {
@@ -133,7 +134,7 @@ func PrintAscii(b Bitset, newLine bool) {
 	}
 }
 
-func ParseHex(s string) ([]Word) {
+func ParseFromHex(s string) ([]Word) {
 	parsed := make([]Word, 0)
 
 	data, err := hex.DecodeString(s)
@@ -144,6 +145,37 @@ func ParseHex(s string) ([]Word) {
 	}
 
 	return parsed
+}
+
+func ParseToHex(wds []Word) (s string) {
+	bts := make([]byte, 0)
+	for _, wd := range wds {
+		bts = append(bts, wd[0], wd[1], wd[2], wd[3])
+	}
+
+	return hex.EncodeToString(bts)
+}
+
+func ParseFromBase64(s string) ([]Word) {
+	parsed := make([]Word, 0)
+
+	data, err := base64.StdEncoding.DecodeString(s)
+	if err != nil { panic(err) }
+
+	for i := 0; i < len(data); i += 4 {
+		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
+	}
+
+	return parsed
+}
+
+func ParseToBase64(wds []Word) (s string) {
+	bts := make([]byte, 0)
+	for _, wd := range wds {
+		bts = append(bts, wd[0], wd[1], wd[2], wd[3])
+	}
+
+	return base64.StdEncoding.EncodeToString(bts)
 }
 
 func compareSlice(ws1, ws2 []Word) bool {
@@ -179,12 +211,12 @@ func aesECBTest(fname string) {
 		i++
 
 		parts = strings.Split(lines[i], " = ") // KEY
-		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		aes_key := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 		i++
 		aes := MakeAES(aes_key)
 
 		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
-		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		aes_message := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 		i++
 
 		var cipher = make([]Word, 0)
@@ -196,7 +228,7 @@ func aesECBTest(fname string) {
 		}
 
 		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
-		compare := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		compare := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 
 		if (!compareSlice(cipher, compare)) {
 			fmt.Printf("Failed!\n")
@@ -236,18 +268,18 @@ func aesCBCTest(fname string) {
 		i++
 
 		parts = strings.Split(lines[i], " = ") // KEY
-		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		aes_key := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 		i++
 		aes := MakeAES(aes_key)
 
 		parts = strings.Split(lines[i], " = ") // IV
 		var iv [4]Word
-		temp := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		temp := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 		copy(iv[:], temp)		
 		i++
 
 		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
-		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		aes_message := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 		i++
 
 		var cipher = make([]Word, 0)
@@ -259,7 +291,7 @@ func aesCBCTest(fname string) {
 		}
 
 		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
-		compare := ParseHex(strings.TrimSuffix(parts[1], "\r"))
+		compare := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
 
 		if (!compareSlice(cipher, compare)) {
 			fmt.Printf("Failed!\n")

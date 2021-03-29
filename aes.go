@@ -1,4 +1,4 @@
-package main
+package jmtcrypto
 
 import (
 	"math/rand"
@@ -50,7 +50,7 @@ type Word [4]byte // 32 bits
     // rand.Read(token)
     // fmt.Println(token)
 
-func randomBlock(n int) (key []Word) {
+func RandomBlock(n int) (key []Word) {
 	key = make([]Word, n)
 
 	for i := 0; i < len(key); i++ {

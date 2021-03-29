@@ -1,8 +1,26 @@
-package main
+package jmtcrypto
 
 type blockCipher interface {
     blockEncrypt(plaintext [4]Word) [4]Word
     blockDecrypt(cipherText [4]Word) [4]Word
+}
+
+func ByteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
+	bs3 = make([]byte, len(bs1))
+	for i := 0; i < len(bs1); i++ {
+		bs3[i] = bs1[i] ^ bs2[i]
+	}
+
+	return
+}
+
+func WordStreamXOR(bs1, bs2 []Word) (bs3 []Word) {
+	bs3 = make([]Word, len(bs1))
+	for i := 0; i < len(bs1); i++ {
+		bs3[i] = WordXOR(bs1[i], bs2[i])
+	}
+
+	return
 }
 
 func WordXOR(w1, w2 Word) (w3 Word) {
