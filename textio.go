@@ -28,46 +28,7 @@ func ParseText(s string) Bitset {
 	return msg
 }
 
-func ParseForAES(s string) []Word {
-	msg := make([]Word, 0)
-	counter := 0
-	var w Word
-	for _, char := range s {
-		w[counter] = byte(char)
-		counter++
-		if counter == 4 {
-			counter = 0
-			msg = append(msg, w)
-		}
-	}
 
-	if counter != 0 {
-		for i := counter; i < 4; i++ {
-			w[i] = 0
-		}
-		msg = append(msg, w)
-	}
-
-	if len(msg) % 4 != 0 {
-		pad := 4 - (len(msg) % 4)
-		for i := 0; i < pad; i++ {
-			msg = append(msg, Word{0,0,0,0})
-		}	
-	}
-	return msg
-}
-
-func DeparseForAES(ws []Word) (s string) {
-	var sb strings.Builder
-
-	for _, w := range ws {
-		for _, b := range w {
-			sb.WriteString(string(rune(b)))
-		}
-	}
-
-	return sb.String()
-}
 
 func DeparseMessage(bs Bitset) string {
 	var sb strings.Builder
@@ -134,6 +95,51 @@ func PrintAscii(b Bitset, newLine bool) {
 	}
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Convert to and from Words
+//
+func ParseFromAscii(s string) []Word {
+	msg := make([]Word, 0)
+	counter := 0
+	var w Word
+	for _, char := range s {
+		w[counter] = byte(char)
+		counter++
+		if counter == 4 {
+			counter = 0
+			msg = append(msg, w)
+		}
+	}
+
+	if counter != 0 {
+		for i := counter; i < 4; i++ {
+			w[i] = 0
+		}
+		msg = append(msg, w)
+	}
+
+	if len(msg) % 4 != 0 {
+		pad := 4 - (len(msg) % 4)
+		for i := 0; i < pad; i++ {
+			msg = append(msg, Word{0,0,0,0})
+		}	
+	}
+	return msg
+}
+
+func ParseToAscii(ws []Word) (s string) {
+	var sb strings.Builder
+
+	for _, w := range ws {
+		for _, b := range w {
+			sb.WriteString(string(rune(b)))
+		}
+	}
+
+	return sb.String()
+}
+
 func ParseFromHex(s string) ([]Word) {
 	parsed := make([]Word, 0)
 
@@ -175,6 +181,51 @@ func ParseToBase64(wds []Word) (s string) {
 		bts = append(bts, wd[0], wd[1], wd[2], wd[3])
 	}
 
+	return base64.StdEncoding.EncodeToString(bts)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Convert to and from bytes
+//
+func ParseFromAsciiB(bs string) (msg []byte) {
+	msg = make([]byte, 0)
+	for _, char := range bs {
+		msg = append(msg, byte(char))
+	}
+
+	return
+}
+
+func ParseToAsciiB(bs []byte) (s string) {
+	var sb strings.Builder
+
+	for _, b := range bs {
+		sb.WriteString(string(rune(b)))
+	}
+
+	return sb.String()
+}
+
+func ParseFromHexB(s string) ([]byte) {
+	data, err := hex.DecodeString(s)
+	if err != nil { panic(err) }
+
+	return data
+}
+
+func ParseToHexB(bts []byte) (s string) {
+	return hex.EncodeToString(bts)
+}
+
+func ParseFromBase64B(s string) ([]byte) {
+	data, err := base64.StdEncoding.DecodeString(s)
+	if err != nil { panic(err) }
+
+	return data
+}
+
+func ParseToBase64B(bts []byte) (s string) {
 	return base64.StdEncoding.EncodeToString(bts)
 }
 
