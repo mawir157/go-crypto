@@ -129,14 +129,6 @@ func (code AESCode) subWord(word Word, encrypt bool) (new Word) {
 	return
 }
 
-// func (code AESCode) xor(w1, w2 Word) (w3 Word) {
-// 	for i := 0; i < 4; i++ {
-// 		w3[i] = w1[i] ^ w2[i]
-// 	}
-
-// 	return
-// }
-
 // Galois Field (256) Multiplication of two Bytes
 func galMul(a, b byte) (p byte) {
 	for i := 0; i < 8; i++ {

@@ -2,12 +2,15 @@ package jmtcrypto
 
 import (
 	"fmt"
-	"io/ioutil"
 	"encoding/hex"
 	"encoding/base64"
 	"strings"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Convert to and from Bitsets
+//
 func CharToBitset(c rune) (bs Bitset) {
 	bs = make(Bitset, 8)
 
@@ -27,8 +30,6 @@ func ParseText(s string) Bitset {
 
 	return msg
 }
-
-
 
 func DeparseMessage(bs Bitset) string {
 	var sb strings.Builder
@@ -95,110 +96,33 @@ func PrintAscii(b Bitset, newLine bool) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Convert to and from Words
-//
-func ParseFromAscii(s string) []Word {
-	msg := make([]Word, 0)
-	counter := 0
-	var w Word
-	for _, char := range s {
-		w[counter] = byte(char)
-		counter++
-		if counter == 4 {
-			counter = 0
-			msg = append(msg, w)
-		}
-	}
-
-	if counter != 0 {
-		for i := counter; i < 4; i++ {
-			w[i] = 0
-		}
-		msg = append(msg, w)
-	}
-
-	if len(msg) % 4 != 0 {
-		pad := 4 - (len(msg) % 4)
-		for i := 0; i < pad; i++ {
-			msg = append(msg, Word{0,0,0,0})
-		}	
-	}
-	return msg
-}
-
-func ParseToAscii(ws []Word) (s string) {
-	var sb strings.Builder
-
-	for _, w := range ws {
-		for _, b := range w {
-			sb.WriteString(string(rune(b)))
-		}
-	}
-
-	return sb.String()
-}
-
-func ParseFromHex(s string) ([]Word) {
-	parsed := make([]Word, 0)
-
-	data, err := hex.DecodeString(s)
-	if err != nil { panic(err) }
-
-	for i := 0; i < len(data); i += 4 {
-		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
-	}
-
-	return parsed
-}
-
-func ParseToHex(wds []Word) (s string) {
-	bts := make([]byte, 0)
-	for _, wd := range wds {
-		bts = append(bts, wd[0], wd[1], wd[2], wd[3])
-	}
-
-	return hex.EncodeToString(bts)
-}
-
-func ParseFromBase64(s string) ([]Word) {
-	parsed := make([]Word, 0)
-
-	data, err := base64.StdEncoding.DecodeString(s)
-	if err != nil { panic(err) }
-
-	for i := 0; i < len(data); i += 4 {
-		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
-	}
-
-	return parsed
-}
-
-func ParseToBase64(wds []Word) (s string) {
-	bts := make([]byte, 0)
-	for _, wd := range wds {
-		bts = append(bts, wd[0], wd[1], wd[2], wd[3])
-	}
-
-	return base64.StdEncoding.EncodeToString(bts)
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Convert to and from bytes
 //
-func ParseFromAsciiB(bs string) (msg []byte) {
+func ParseFromAscii(str string, pad bool) (msg []byte) {
 	msg = make([]byte, 0)
-	for _, char := range bs {
+	for _, char := range str {
 		msg = append(msg, byte(char))
+	}
+	if pad {
+		padValue := byte(16 - (len(msg) % 16))
+		for i := byte(0); i < padValue; i++ {
+			msg = append(msg, padValue)
+		}
 	}
 
 	return
 }
 
-func ParseToAsciiB(bs []byte) (s string) {
+func ParseToAscii(bs []byte, pad bool) (s string) {
 	var sb strings.Builder
+
+	if pad {
+		final := bs[len(bs) - 1]
+		bs = bs[:len(bs)-int(final)]
+	}
 
 	for _, b := range bs {
 		sb.WriteString(string(rune(b)))
@@ -207,156 +131,63 @@ func ParseToAsciiB(bs []byte) (s string) {
 	return sb.String()
 }
 
-func ParseFromHexB(s string) ([]byte) {
+func ParseFromHex(s string, pad bool) ([]byte) {
 	data, err := hex.DecodeString(s)
 	if err != nil { panic(err) }
 
+	if pad {
+		padValue := byte(16 - (len(data) % 16)) % 16
+		for i := byte(0); i < padValue; i++ {
+			data = append(data, padValue)
+		}		
+	}	
+
 	return data
 }
 
-func ParseToHexB(bts []byte) (s string) {
+func ParseToHex(bts []byte) (s string) {
 	return hex.EncodeToString(bts)
 }
 
-func ParseFromBase64B(s string) ([]byte) {
+func ParseFromBase64(s string, pad bool) ([]byte) {
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil { panic(err) }
+
+	if pad {
+		padValue := byte(16 -(len(data) % 16)) % 16
+		for i := byte(0); i < padValue; i++ {
+			data = append(data, padValue)
+		}		
+	}	
 
 	return data
 }
 
-func ParseToBase64B(bts []byte) (s string) {
+func ParseToBase64(bts []byte) (s string) {
 	return base64.StdEncoding.EncodeToString(bts)
 }
 
-func compareSlice(ws1, ws2 []Word) bool {
-	if len(ws1) != len(ws2) {
-		return false
+func BytesToWords(data []byte, pad bool) (parsed []Word) {
+	if pad {
+		padValue := byte(16 -(len(data) % 16))
+
+		for i := byte(0); i < padValue; i++ {
+			data = append(data, padValue)
+		}			
 	}
-	for i, v := range ws1 {
-		if v != ws2[i] {
-			return false
-		}
+	
+	for i := 0; i < len(data); i += 4 {
+		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
 	}
-	return true	
+
+	return parsed
 }
 
-func aesECBTest(fname string) {
-	fmt.Println(fname)
-
-	b, err := ioutil.ReadFile(fname)
-	if err != nil { return }
-
-	lines := strings.Split(string(b), "\n")
-
-	mode := true
-	for i := 9; i < len(lines); i++ {
-		if (lines[i] == "[DECRYPT]\r") {
-			mode = false
-			i += 2
-		}
-
-		if len(lines[i]) == 0 { break }
-
-		parts := strings.Split(lines[i], " = ") // COUNT
-		i++
-
-		parts = strings.Split(lines[i], " = ") // KEY
-		aes_key := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-		aes := MakeAES(aes_key)
-
-		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
-		aes_message := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-
-		var cipher = make([]Word, 0)
-
-		if mode {
-			cipher = ECBEncrypt(aes, aes_message)
-		} else {
-			cipher = ECBDecrypt(aes, aes_message)
-		}
-
-		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
-		compare := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-
-		if (!compareSlice(cipher, compare)) {
-			fmt.Printf("Failed!\n")
-			for _, b := range cipher {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-			for _, b := range compare {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-		}
-
-		i++
+func WordsToBytes(ws []Word) (data []byte) {
+	for _ , w := range ws {
+		data = append(data, w[:]...)
 	}
+
 	return
-}
 
-func aesCBCTest(fname string) {
-	fmt.Println(fname)
-
-	b, err := ioutil.ReadFile(fname)
-	if err != nil { return }
-
-	lines := strings.Split(string(b), "\n")
-
-	mode := true
-	for i := 9; i < len(lines); i++ {
-		if (lines[i] == "[DECRYPT]\r") {
-			mode = false
-			i += 2
-		}
-
-		if len(lines[i]) == 0 { break }
-
-		parts := strings.Split(lines[i], " = ") // COUNT
-		i++
-
-		parts = strings.Split(lines[i], " = ") // KEY
-		aes_key := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-		aes := MakeAES(aes_key)
-
-		parts = strings.Split(lines[i], " = ") // IV
-		var iv [4]Word
-		temp := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-		copy(iv[:], temp)		
-		i++
-
-		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
-		aes_message := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-
-		var cipher = make([]Word, 0)
-
-		if mode {
-			cipher = CBCEncrypt(aes, iv, aes_message)
-		} else {
-			cipher = CBCDecrypt(aes, iv, aes_message)
-		}
-
-		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
-		compare := ParseFromHex(strings.TrimSuffix(parts[1], "\r"))
-
-		if (!compareSlice(cipher, compare)) {
-			fmt.Printf("Failed!\n")
-			for _, b := range cipher {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-			for _, b := range compare {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-		}
-
-		i++
-	}
-	return
 }
