@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"encoding/hex"
 	"encoding/base64"
+	"errors"
 	"strings"
 )
 
@@ -190,4 +191,14 @@ func WordsToBytes(ws []Word) (data []byte) {
 
 	return
 
+}
+
+func ValidatePad(bs []byte) (error) {
+	final := bs[len(bs) - 1]
+	for b := 0; b < int(final); b++ {
+		if bs[len(bs) - 1 - b] != final {
+			return errors.New("Invalid Pad")
+		}
+	}
+	return nil
 }

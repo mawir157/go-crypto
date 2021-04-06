@@ -3,6 +3,7 @@ package jmtcrypto
 type BlockCipher interface {
     blockEncrypt(plaintext [4]Word) [4]Word
     blockDecrypt(cipherText [4]Word) [4]Word
+    blockSize() int
 }
 
 func ByteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {

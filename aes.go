@@ -80,6 +80,10 @@ func MakeAES(key []Word) AESCode {
 	return AESCode{numberOfRounds:n, key:key}
 }
 
+func (code AESCode) blockSize() int {
+	return 16
+}
+
 // returns a block of 44, 52, 60 Words
 func (code AESCode) keyExpansion() (expanded []Word) {
 	rc := Word{0, 0, 0, 0}
