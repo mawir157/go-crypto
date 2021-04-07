@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/base64"
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -126,7 +127,15 @@ func ParseToAscii(bs []byte, pad bool) (s string) {
 	}
 
 	for _, b := range bs {
-		sb.WriteString(string(rune(b)))
+		if (b == 0x0a) || (b == 0x0d) {
+			sb.WriteString("\n")
+		} else if (b == 0x00) {
+			// do nothing
+		} else if (b < 0x20) || (b >= 0x7f) {
+			sb.WriteString("<" + strconv.Itoa(int(b)) + ">")
+		} else {
+			sb.WriteString(string(rune(b)))
+		}
 	}
 
 	return sb.String()
