@@ -1,12 +1,17 @@
-package main
+package jmtcrypto
 
 import (
 	"fmt"
-	"io/ioutil"
 	"encoding/hex"
+	"encoding/base64"
+	"errors"
 	"strings"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Convert to and from Bitsets
+//
 func CharToBitset(c rune) (bs Bitset) {
 	bs = make(Bitset, 8)
 
@@ -25,47 +30,6 @@ func ParseText(s string) Bitset {
 	}
 
 	return msg
-}
-
-func ParseForAES(s string) []Word {
-	msg := make([]Word, 0)
-	counter := 0
-	var w Word
-	for _, char := range s {
-		w[counter] = byte(char)
-		counter++
-		if counter == 4 {
-			counter = 0
-			msg = append(msg, w)
-		}
-	}
-
-	if counter != 0 {
-		for i := counter; i < 4; i++ {
-			w[i] = 0
-		}
-		msg = append(msg, w)
-	}
-
-	if len(msg) % 4 != 0 {
-		pad := 4 - (len(msg) % 4)
-		for i := 0; i < pad; i++ {
-			msg = append(msg, Word{0,0,0,0})
-		}	
-	}
-	return msg
-}
-
-func DearseForAES(ws []Word) (s string) {
-	var sb strings.Builder
-
-	for _, w := range ws {
-		for _, b := range w {
-			sb.WriteString(string(rune(b)))
-		}
-	}
-
-	return sb.String()
 }
 
 func DeparseMessage(bs Bitset) string {
@@ -133,12 +97,86 @@ func PrintAscii(b Bitset, newLine bool) {
 	}
 }
 
-func ParseHex(s string) ([]Word) {
-	parsed := make([]Word, 0)
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Convert to and from bytes
+//
+func ParseFromAscii(str string, pad bool) (msg []byte) {
+	msg = make([]byte, 0)
+	for _, char := range str {
+		msg = append(msg, byte(char))
+	}
+	if pad {
+		padValue := byte(16 - (len(msg) % 16))
+		for i := byte(0); i < padValue; i++ {
+			msg = append(msg, padValue)
+		}
+	}
+
+	return
+}
+
+func ParseToAscii(bs []byte, pad bool) (s string) {
+	var sb strings.Builder
+
+	if pad {
+		final := bs[len(bs) - 1]
+		bs = bs[:len(bs)-int(final)]
+	}
+
+	for _, b := range bs {
+		sb.WriteString(string(rune(b)))
+	}
+
+	return sb.String()
+}
+
+func ParseFromHex(s string, pad bool) ([]byte) {
 	data, err := hex.DecodeString(s)
 	if err != nil { panic(err) }
 
+	if pad {
+		padValue := byte(16 - (len(data) % 16)) % 16
+		for i := byte(0); i < padValue; i++ {
+			data = append(data, padValue)
+		}		
+	}	
+
+	return data
+}
+
+func ParseToHex(bts []byte) (s string) {
+	return hex.EncodeToString(bts)
+}
+
+func ParseFromBase64(s string, pad bool) ([]byte) {
+	data, err := base64.StdEncoding.DecodeString(s)
+	if err != nil { panic(err) }
+
+	if pad {
+		padValue := byte(16 -(len(data) % 16)) % 16
+		for i := byte(0); i < padValue; i++ {
+			data = append(data, padValue)
+		}		
+	}	
+
+	return data
+}
+
+func ParseToBase64(bts []byte) (s string) {
+	return base64.StdEncoding.EncodeToString(bts)
+}
+
+func BytesToWords(data []byte, pad bool) (parsed []Word) {
+	if pad {
+		padValue := byte(16 -(len(data) % 16))
+
+		for i := byte(0); i < padValue; i++ {
+			data = append(data, padValue)
+		}			
+	}
+	
 	for i := 0; i < len(data); i += 4 {
 		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
 	}
@@ -146,134 +184,21 @@ func ParseHex(s string) ([]Word) {
 	return parsed
 }
 
-func compareSlice(ws1, ws2 []Word) bool {
-	if len(ws1) != len(ws2) {
-		return false
+func WordsToBytes(ws []Word) (data []byte) {
+	for _ , w := range ws {
+		data = append(data, w[:]...)
 	}
-	for i, v := range ws1 {
-		if v != ws2[i] {
-			return false
-		}
-	}
-	return true	
+
+	return
+
 }
 
-func aesECBTest(fname string) {
-	fmt.Println(fname)
-
-	b, err := ioutil.ReadFile(fname)
-	if err != nil { return }
-
-	lines := strings.Split(string(b), "\n")
-
-	mode := true
-	for i := 9; i < len(lines); i++ {
-		if (lines[i] == "[DECRYPT]\r") {
-			mode = false
-			i += 2
+func ValidatePad(bs []byte) (error) {
+	final := bs[len(bs) - 1]
+	for b := 0; b < int(final); b++ {
+		if bs[len(bs) - 1 - b] != final {
+			return errors.New("Invalid Pad")
 		}
-
-		if len(lines[i]) == 0 { break }
-
-		parts := strings.Split(lines[i], " = ") // COUNT
-		i++
-
-		parts = strings.Split(lines[i], " = ") // KEY
-		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-		aes := MakeAES(aes_key)
-
-		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
-		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-
-		var cipher = make([]Word, 0)
-
-		if mode {
-			cipher = ECBEncrypt(aes, aes_message)
-		} else {
-			cipher = ECBDecrypt(aes, aes_message)
-		}
-
-		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
-		compare := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-
-		if (!compareSlice(cipher, compare)) {
-			fmt.Printf("Failed!\n")
-			for _, b := range cipher {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-			for _, b := range compare {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-		}
-
-		i++
 	}
-	return
-}
-
-func aesCBCTest(fname string) {
-	fmt.Println(fname)
-
-	b, err := ioutil.ReadFile(fname)
-	if err != nil { return }
-
-	lines := strings.Split(string(b), "\n")
-
-	mode := true
-	for i := 9; i < len(lines); i++ {
-		if (lines[i] == "[DECRYPT]\r") {
-			mode = false
-			i += 2
-		}
-
-		if len(lines[i]) == 0 { break }
-
-		parts := strings.Split(lines[i], " = ") // COUNT
-		i++
-
-		parts = strings.Split(lines[i], " = ") // KEY
-		aes_key := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-		aes := MakeAES(aes_key)
-
-		parts = strings.Split(lines[i], " = ") // IV
-		var iv [4]Word
-		temp := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-		copy(iv[:], temp)		
-		i++
-
-		parts = strings.Split(lines[i], " = ") // PLAIN/CIPHERTEXT
-		aes_message := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-		i++
-
-		var cipher = make([]Word, 0)
-
-		if mode {
-			cipher = CBCEncrypt(aes, iv, aes_message)
-		} else {
-			cipher = CBCDecrypt(aes, iv, aes_message)
-		}
-
-		parts = strings.Split(lines[i], " = ") // CIPHER/PLAINTEXT
-		compare := ParseHex(strings.TrimSuffix(parts[1], "\r"))
-
-		if (!compareSlice(cipher, compare)) {
-			fmt.Printf("Failed!\n")
-			for _, b := range cipher {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-			for _, b := range compare {
-				fmt.Printf("%02x", b )
-			}
-			fmt.Printf("\n")
-		}
-
-		i++
-	}
-	return
+	return nil
 }
