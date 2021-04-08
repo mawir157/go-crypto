@@ -1,5 +1,7 @@
 package jmtcrypto
 
+import ()
+
 type BlockCipher interface {
     blockEncrypt(plaintext [4]Word) [4]Word
     blockDecrypt(cipherText [4]Word) [4]Word
@@ -39,6 +41,7 @@ func ECBEncrypt(bc BlockCipher, msg []byte)  ([]byte) {
 	out := make([]Word, 0)
 	var block [4]Word
 	msgW := BytesToWords(msg, true)
+
 	for i := 0; i < len(msgW); i += 4 {
 		copy(block[:], msgW[i:i+4])
 		eBlock := bc.blockEncrypt(block)
@@ -49,7 +52,7 @@ func ECBEncrypt(bc BlockCipher, msg []byte)  ([]byte) {
 	return outB
 }
 
-func ECBDecrypt(bc BlockCipher, msg []byte)  ([]byte) {
+func ECBDecrypt(bc BlockCipher, msg []byte)  ([]byte, error) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -63,7 +66,12 @@ func ECBDecrypt(bc BlockCipher, msg []byte)  ([]byte) {
 
 	outB := WordsToBytes(out)
 
-	return outB
+	err := ValidatePad(outB)
+	if err != nil {
+    return nil, err
+	}
+
+	return outB, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +100,7 @@ func CBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -112,7 +120,12 @@ func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 
 	outB := WordsToBytes(out)
 
-	return outB
+	err := ValidatePad(outB)
+	if err != nil {
+    return nil, err
+	}
+
+	return outB, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,7 +158,7 @@ func PCBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -169,7 +182,12 @@ func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 
 	outB := WordsToBytes(out)
 
-	return outB
+	err := ValidatePad(outB)
+	if err != nil {
+    return nil, err
+	}
+
+	return outB, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,7 +218,7 @@ func OFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 	out := make([]Word, 0)
 
 	msgW := BytesToWords(msg, false)
@@ -221,7 +239,12 @@ func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 
 	outB := WordsToBytes(out)
 
-	return outB
+	err := ValidatePad(outB)
+	if err != nil {
+    return nil, err
+	}
+
+	return outB, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +275,7 @@ func CFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 	out := make([]Word, 0)
 
 	msgW := BytesToWords(msg, false)
@@ -273,5 +296,10 @@ func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 
 	outB := WordsToBytes(out)
 
-	return outB
+	err := ValidatePad(outB)
+	if err != nil {
+    return nil, err
+	}
+
+	return outB, nil
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/base64"
 	"errors"
-	"strconv"
+	// "strconv"
 	"strings"
 )
 
@@ -127,15 +127,7 @@ func ParseToAscii(bs []byte, pad bool) (s string) {
 	}
 
 	for _, b := range bs {
-		if (b == 0x0a) || (b == 0x0d) {
-			sb.WriteString("\n")
-		} else if (b == 0x00) {
-			// do nothing
-		} else if (b < 0x20) || (b >= 0x7f) {
-			sb.WriteString("<" + strconv.Itoa(int(b)) + ">")
-		} else {
-			sb.WriteString(string(rune(b)))
-		}
+		sb.WriteString(string(rune(b)))
 	}
 
 	return sb.String()
@@ -204,9 +196,22 @@ func WordsToBytes(ws []Word) (data []byte) {
 
 func ValidatePad(bs []byte) (error) {
 	final := bs[len(bs) - 1]
+
+	if len(bs) % 16 != 0 {
+		return errors.New("Invalid Pad 0")
+	}
+
+	if int(final) >= len(bs) {
+		return errors.New("Invalid Pad 1")
+	}
+
+	if int(final) == 0 {
+		return errors.New("Invalid Pad 1")
+	}
+
 	for b := 0; b < int(final); b++ {
 		if bs[len(bs) - 1 - b] != final {
-			return errors.New("Invalid Pad")
+			return errors.New("Invalid Pad 2")
 		}
 	}
 	return nil
