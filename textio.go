@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/base64"
 	"errors"
+	// "strconv"
 	"strings"
 )
 
@@ -193,8 +194,22 @@ func WordsToBytes(ws []Word) (data []byte) {
 
 }
 
+// The Error messages are intentially vague to prevent leaking information!
 func ValidatePad(bs []byte) (error) {
 	final := bs[len(bs) - 1]
+
+	if len(bs) % 16 != 0 {
+		return errors.New("Invalid Pad")
+	}
+
+	if int(final) > len(bs) {
+		return errors.New("Invalid Pad")
+	}
+
+	if int(final) == 0 {
+		return errors.New("Invalid Pad")
+	}
+
 	for b := 0; b < int(final); b++ {
 		if bs[len(bs) - 1 - b] != final {
 			return errors.New("Invalid Pad")
