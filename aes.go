@@ -46,10 +46,6 @@ var rCons = [16]byte{0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
 
 type Word [4]byte // 32 bits
 
-    // token := make([]byte, 4)
-    // rand.Read(token)
-    // fmt.Println(token)
-
 func RandomBlock(n int) (key []Word) {
 	key = make([]Word, n)
 
