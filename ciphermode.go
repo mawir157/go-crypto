@@ -303,3 +303,57 @@ func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 
 	return outB, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Counter (CTR)
+//
+func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte)  ([]byte) {
+	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
+
+	out := make([]Word, 0)
+
+	msgW := BytesToWords(msg, true)
+
+	for i := 0; i < len(msgW); i += 4 {
+		var iv [4]Word
+		temp := BytesToWords(append(nonce, counter...), false)
+		copy(iv[:], temp)
+
+		eBlock := bc.blockEncrypt(iv)
+
+		for w := 0; w < 4; w++ {
+			eBlock[w] = WordXOR(eBlock[w], msgW[i+w])
+		}
+
+		out = append(out, eBlock[:]...)
+
+		counter = incrementCTR(counter)
+	}
+
+	outB := WordsToBytes(out)
+
+	return outB[:len(msg)]
+}
+
+func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte)  ([]byte, error) {
+	out := CTREncrypt(bc, nonce, msg)
+
+	return out, nil
+}
+
+func incrementCTR(counter []byte) []byte {
+	pos := 0
+
+	counter[pos] += 1
+	for counter[pos] == 0 {
+		pos++
+		counter[pos] += 1
+
+		if pos > len(counter) {
+			pos = len(counter) - 1
+		}
+	}
+
+	return counter
+}
