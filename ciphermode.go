@@ -1,6 +1,6 @@
 package jmtcrypto
 
-import ("fmt")
+import ()
 
 type BlockCipher interface {
     blockEncrypt(plaintext [4]Word) [4]Word
@@ -343,14 +343,14 @@ func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte)  ([]byte, error) {
 }
 
 func incrementCTR(counter []byte) []byte {
-	pos := len(counter) - 1
+	pos := 0
 
 	counter[pos] += 1
 	for counter[pos] == 0 {
-		pos--
+		pos++
 		counter[pos] += 1
 
-		if pos < 0 {
+		if pos > len(counter) {
 			pos = len(counter) - 1
 		}
 	}
