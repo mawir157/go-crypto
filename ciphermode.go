@@ -3,9 +3,9 @@ package jmtcrypto
 import ()
 
 type BlockCipher interface {
-    blockEncrypt(plaintext [4]Word) [4]Word
-    blockDecrypt(cipherText [4]Word) [4]Word
-    blockSize() int
+	blockEncrypt(plaintext [4]Word) [4]Word
+	blockDecrypt(cipherText [4]Word) [4]Word
+	blockSize() int
 }
 
 func ByteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
@@ -122,7 +122,7 @@ func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 
 	err := ValidatePad(outB)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
 	return outB, nil
@@ -184,7 +184,7 @@ func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 
 	err := ValidatePad(outB)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
 	return outB, nil
@@ -241,7 +241,7 @@ func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 
 	err := ValidatePad(outB)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
 	return outB, nil
@@ -298,7 +298,7 @@ func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 
 	err := ValidatePad(outB)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
 	return outB, nil
