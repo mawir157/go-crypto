@@ -37,7 +37,7 @@ func WordXOR(w1, w2 Word) (w3 Word) {
 //
 // Electronic Codebook (ECB)
 //
-func ECBEncrypt(bc BlockCipher, msg []byte)  ([]byte) {
+func ECBEncrypt(bc BlockCipher, msg []byte) ([]byte) {
 	out := make([]Word, 0)
 	var block [4]Word
 	msgW := BytesToWords(msg, true)
@@ -52,7 +52,7 @@ func ECBEncrypt(bc BlockCipher, msg []byte)  ([]byte) {
 	return outB
 }
 
-func ECBDecrypt(bc BlockCipher, msg []byte)  ([]byte, error) {
+func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -78,7 +78,7 @@ func ECBDecrypt(bc BlockCipher, msg []byte)  ([]byte, error) {
 //
 // Cipher block chaining (CBC)
 //
-func CBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func CBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -100,7 +100,7 @@ func CBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
+func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -132,7 +132,7 @@ func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 //
 // Propagating cipher block chaining (PCBC)
 //
-func PCBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func PCBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -158,7 +158,7 @@ func PCBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
+func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 	out := make([]Word, 0)
 	var block [4]Word
 
@@ -194,7 +194,7 @@ func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 //
 // Propagating cipher block chaining (OFB)
 //
-func OFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func OFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
 	out := make([]Word, 0)
 
 	msgW := BytesToWords(msg, true)
@@ -218,7 +218,7 @@ func OFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
+func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 	out := make([]Word, 0)
 
 	msgW := BytesToWords(msg, false)
@@ -251,7 +251,7 @@ func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 //
 // Cipher feedback (CFB)
 //
-func CFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
+func CFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
 	out := make([]Word, 0)
 
 	msgW := BytesToWords(msg, true)
@@ -275,7 +275,7 @@ func CFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte) {
 	return outB
 }
 
-func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
+func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 	out := make([]Word, 0)
 
 	msgW := BytesToWords(msg, false)
@@ -308,7 +308,7 @@ func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte)  ([]byte, error) {
 //
 // Counter (CTR)
 //
-func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte)  ([]byte) {
+func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 
 	out := make([]Word, 0)
@@ -336,7 +336,7 @@ func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte)  ([]byte) {
 	return outB[:len(msg)]
 }
 
-func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte)  ([]byte, error) {
+func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {
 	out := CTREncrypt(bc, nonce, msg)
 
 	return out, nil

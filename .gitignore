@@ -4,3 +4,4 @@
 !.gitignore
 # Unignore .go files
 !*.go
+!rand
