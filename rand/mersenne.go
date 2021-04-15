@@ -1,7 +1,7 @@
 package rand
 
 import (
-	"errors"
+	"time"
 )
 
 type Mersenne19937 struct {
@@ -13,30 +13,35 @@ type Mersenne19937 struct {
 	upperMask int
 }
 
-func Mersenne19937Init(seed int) Mersenne19937 {
+func Mersenne19937Init() *Mersenne19937 {
 	w, n, m, r := 32, 624, 397, 31
 
-	f := 1812433253
-	index := 0
-	
-	MT := []int{seed}
-	for i := 1; i < n; i++ {
-		temp := f * (MT[i - 1] ^ (MT[i - 1] >> (w - 2))) + i
-		MT = append(MT, temp & 0xFFFFFFFF)
-	}
+	index := -1
+	MT := make([]int, n)
 
 	lowerMask := (1 << r) - 1
 	upperMask := 0 
 
-	return Mersenne19937{w:w, n:n, m:m, r:r, MT:MT, index:index,
-	                     lowerMask:lowerMask, upperMask:upperMask}
+	return &Mersenne19937{w:w, n:n, m:m, r:r, MT:MT, index:index,
+	                      lowerMask:lowerMask, upperMask:upperMask}
 }
 
-func (rng *Mersenne19937) Extract(b32 bool) (int, error) {
+func (rng *Mersenne19937) Seed(seed int) {
+	if seed <= 0 {
+ 		seed = int(time.Now().UnixNano())
+	}
+
+	f := 1812433253
+
+	rng.MT[0] = seed
+	for i := 1; i < rng.n; i++ {
+		rng.MT[i] = (f * (rng.MT[i - 1] ^ (rng.MT[i - 1] >> (rng.w - 2))) + i) & 0xFFFFFFFF
+	}
+	rng.index = 0
+}
+
+func (rng *Mersenne19937) Next() int {
 	if rng.index >= rng.n {
-		if rng.index > rng.n {
-			return 0, errors.New("Invalid seed")
-		}
 		rng.twist()
 	}
 
@@ -50,15 +55,12 @@ func (rng *Mersenne19937) Extract(b32 bool) (int, error) {
 
 	// mersenne19937 returns 32-bit values
 	y &= 0xFFFFFFFF
-	if b32 {
-		y = int(int32(y))
-	}
 
-	return y, nil
+	return y
 }
 
 
-func (rng *Mersenne19937) twist() error {
+func (rng *Mersenne19937) twist() {
 	a := 0x9908B0DF
 	for i := 0; i < rng.n; i++ {
 		x := (rng.MT[i] & rng.upperMask) + (rng.MT[(i+1) % rng.n] & rng.lowerMask)
@@ -71,16 +73,13 @@ func (rng *Mersenne19937) twist() error {
 
 	rng.index = 0
 
-	return nil
+	return
 }
 
-func (rng *Mersenne19937) Stream(n int, b32 bool) (out []int) {
+func (rng *Mersenne19937) Stream(n int) (out []int) {
 	out = make([]int, n)
 	for i := 0; i < n; i++ {
-		v, err := rng.Extract(b32)
-		if err != nil {
-			break
-		}
+		v := rng.Next()
 		out[i] = v 
 	}
 	return out
