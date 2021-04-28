@@ -18,7 +18,7 @@ type PrivateKey struct {
 	C_inv   []Bitset
 }
 
-func generateKeyPair(r, m int) (PublicKey, PrivateKey) {
+func GenerateKeyPair(r, m int) (PublicKey, PrivateKey) {
 	privateRM := ReedMuller(r, m)
 
 	privateRM.Print(false)

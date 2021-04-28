@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-// import JMTR "github.com/mawir157/jmtcrypto/rand"
-
 type PRNG interface {
 	Seed(seed int)
 	Next() int
@@ -15,9 +13,8 @@ func PRNGStreamEncode(seed int, prng PRNG, msg []byte) (int, []byte) {
 	if seed <= 0 {
  		seed = int(time.Now().UnixNano())
 	}
-	// rng := JMTR.Mersenne19937Init()
 	prng.Seed(seed)
-	// run the rng for 1000 interations to make sure it random
+	// run the rng for 1000 interations to make sure it is random
 	for i := 0; i < 1000; i++ {
 		prng.Next()
 	}

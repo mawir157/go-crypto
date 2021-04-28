@@ -103,8 +103,8 @@ func PrintAscii(b Bitset, newLine bool) {
 //
 // Convert to and from bytes
 //
-func ParseFromAscii(str string, pad bool) (msg []byte) {
-	msg = make([]byte, 0)
+func ParseFromAscii(str string, pad bool) ([]byte, error) {
+	msg := make([]byte, 0)
 	for _, char := range str {
 		msg = append(msg, byte(char))
 	}
@@ -115,10 +115,10 @@ func ParseFromAscii(str string, pad bool) (msg []byte) {
 		}
 	}
 
-	return
+	return msg, nil
 }
 
-func ParseToAscii(bs []byte, pad bool) (s string) {
+func ParseToAscii(bs []byte, pad bool) (string, error) {
 	var sb strings.Builder
 
 	if pad {
@@ -130,12 +130,15 @@ func ParseToAscii(bs []byte, pad bool) (s string) {
 		sb.WriteString(string(rune(b)))
 	}
 
-	return sb.String()
+	return sb.String(), nil
 }
 
-func ParseFromHex(s string, pad bool) ([]byte) {
+func ParseFromHex(s string, pad bool) ([]byte, error) {
 	data, err := hex.DecodeString(s)
-	if err != nil { panic(err) }
+	if err != nil {
+		// panic(err)
+		return []byte{}, errors.New("Invalid Hex string")
+	}
 
 	if pad {
 		padValue := byte(16 - (len(data) % 16)) % 16
@@ -144,16 +147,19 @@ func ParseFromHex(s string, pad bool) ([]byte) {
 		}		
 	}	
 
-	return data
+	return data, nil
 }
 
-func ParseToHex(bts []byte) (s string) {
-	return hex.EncodeToString(bts)
+func ParseToHex(bts []byte) (string, error) {
+	return hex.EncodeToString(bts), nil
 }
 
-func ParseFromBase64(s string, pad bool) ([]byte) {
+func ParseFromBase64(s string, pad bool) ([]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(s)
-	if err != nil { panic(err) }
+	if err != nil {
+		// panic(err)
+		return []byte{}, errors.New("Invalid Base64 string")
+	}
 
 	if pad {
 		padValue := byte(16 -(len(data) % 16)) % 16
@@ -162,11 +168,11 @@ func ParseFromBase64(s string, pad bool) ([]byte) {
 		}		
 	}	
 
-	return data
+	return data, nil
 }
 
-func ParseToBase64(bts []byte) (s string) {
-	return base64.StdEncoding.EncodeToString(bts)
+func ParseToBase64(bts []byte) (string, error) {
+	return base64.StdEncoding.EncodeToString(bts), nil
 }
 
 func BytesToWords(data []byte, pad bool) (parsed []Word) {
