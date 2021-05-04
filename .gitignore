@@ -5,3 +5,5 @@
 # Unignore .go files
 !*.go
 !rand
+!go.mod
+!go.sum
