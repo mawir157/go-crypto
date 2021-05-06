@@ -64,17 +64,19 @@ type AESCode struct {
 	keys            []Word
 }
 
-func MakeAES(key []Word) AESCode {
+func MakeAES(key []byte) AESCode {
+	keyWords := BytesToWords(key, false)
+
 	n := 0
-	if len(key) == 4 {
+	if len(keyWords) == 4 {
 		n = 11
-	} else if len(key) == 6 {
+	} else if len(keyWords) == 6 {
 		n = 13
-	} else if len(key) == 8 {
+	} else if len(keyWords) == 8 {
 		n = 15
 	}
 
-	return AESCode{numberOfRounds:n, key:key}
+	return AESCode{numberOfRounds:n, key:keyWords}
 }
 
 func (code AESCode) blockSize() int {

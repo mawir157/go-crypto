@@ -85,7 +85,6 @@ func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return out, nil
 }
 
