@@ -284,79 +284,47 @@ func (code CamelliaCode) blockEncrypt(w []byte) ([]byte) {
 
 	C := []byte{}
 
-	if n == 128 {
-		d1 = d1 ^ keys["kw1"]
-		d2 = d2 ^ keys["kw2"]
-		d2 = d2 ^ f(d1, keys["k1"])     // Round 1
-		d1 = d1 ^ f(d2, keys["k2"])     // Round 2
-		d2 = d2 ^ f(d1, keys["k3"])     // Round 3
-		d1 = d1 ^ f(d2, keys["k4"])     // Round 4
-		d2 = d2 ^ f(d1, keys["k5"])     // Round 5
-		d1 = d1 ^ f(d2, keys["k6"])     // Round 6
-		d1 = fl(d1, keys["ke1"])        // FL
-		d2 = flinv(d2, keys["ke2"])     // FLINV
-		d2 = d2 ^ f(d1, keys["k7"])     // Round 7
-		d1 = d1 ^ f(d2, keys["k8"])     // Round 8
-		d2 = d2 ^ f(d1, keys["k9"])     // Round 9
-		d1 = d1 ^ f(d2, keys["k10"])    // Round 10
-		d2 = d2 ^ f(d1, keys["k11"])    // Round 11
-		d1 = d1 ^ f(d2, keys["k12"])    // Round 12
-		d1 = fl(d1, keys["ke3"])        // FL
-		d2 = flinv(d2, keys["ke4"])     // FLINV
-		d2 = d2 ^ f(d1, keys["k13"])    // Round 13
-		d1 = d1 ^ f(d2, keys["k14"])    // Round 14
-		d2 = d2 ^ f(d1, keys["k15"])    // Round 15
-		d1 = d1 ^ f(d2, keys["k16"])    // Round 16
-		d2 = d2 ^ f(d1, keys["k17"])    // Round 17
-		d1 = d1 ^ f(d2, keys["k18"])    // Round 18
-		d2 = d2 ^ keys["kw3"]           // Postwhitening
-		d1 = d1 ^ keys["kw4"]	
+	d1 = d1 ^ keys["kw1"]
+	d2 = d2 ^ keys["kw2"]
+	d2 = d2 ^ f(d1, keys["k1"])     // Round 1
+	d1 = d1 ^ f(d2, keys["k2"])     // Round 2
+	d2 = d2 ^ f(d1, keys["k3"])     // Round 3
+	d1 = d1 ^ f(d2, keys["k4"])     // Round 4
+	d2 = d2 ^ f(d1, keys["k5"])     // Round 5
+	d1 = d1 ^ f(d2, keys["k6"])     // Round 6
+	d1 = fl(d1, keys["ke1"])        // FL
+	d2 = flinv(d2, keys["ke2"])     // FLINV
+	d2 = d2 ^ f(d1, keys["k7"])     // Round 7
+	d1 = d1 ^ f(d2, keys["k8"])     // Round 8
+	d2 = d2 ^ f(d1, keys["k9"])     // Round 9
+	d1 = d1 ^ f(d2, keys["k10"])    // Round 10
+	d2 = d2 ^ f(d1, keys["k11"])    // Round 11
+	d1 = d1 ^ f(d2, keys["k12"])    // Round 12
+	d1 = fl(d1, keys["ke3"])        // FL
+	d2 = flinv(d2, keys["ke4"])     // FLINV
+	d2 = d2 ^ f(d1, keys["k13"])    // Round 13
+	d1 = d1 ^ f(d2, keys["k14"])    // Round 14
+	d2 = d2 ^ f(d1, keys["k15"])    // Round 15
+	d1 = d1 ^ f(d2, keys["k16"])    // Round 16
+	d2 = d2 ^ f(d1, keys["k17"])    // Round 17
+	d1 = d1 ^ f(d2, keys["k18"])    // Round 18
 
-		C = append(C, devert(d2)...)
-		C = append(C, devert(d1)...)	
+	if n != 128 {
+	   d1 = fl(d1, keys["ke5"])        // FL
+	   d2 = flinv(d2, keys["ke6"])     // FLINV
+	   d2 = d2 ^ f(d1, keys["k19"])    // Round 19
+	   d1 = d1 ^ f(d2, keys["k20"])    // Round 20
+	   d2 = d2 ^ f(d1, keys["k21"])    // Round 21
+	   d1 = d1 ^ f(d2, keys["k22"])    // Round 22
+	   d2 = d2 ^ f(d1, keys["k23"])    // Round 23
+	   d1 = d1 ^ f(d2, keys["k24"])    // Round 24
 	}
+
+	d2 = d2 ^ keys["kw3"]           // Postwhitening
+	d1 = d1 ^ keys["kw4"]
+
+	C = append(C, devert(d2)...)
+	C = append(C, devert(d1)...)
 
 	return C
 }
-
-
-/*
-   D1 = D1 ^ kw1;           // Prewhitening
-   D2 = D2 ^ kw2;
-   D2 = D2 ^ F(D1, k1);     // Round 1
-   D1 = D1 ^ F(D2, k2);     // Round 2
-   D2 = D2 ^ F(D1, k3);     // Round 3
-   D1 = D1 ^ F(D2, k4);     // Round 4
-   D2 = D2 ^ F(D1, k5);     // Round 5
-   D1 = D1 ^ F(D2, k6);     // Round 6
-   D1 = FL   (D1, ke1);     // FL
-   D2 = FLINV(D2, ke2);     // FLINV
-   D2 = D2 ^ F(D1, k7);     // Round 7
-   D1 = D1 ^ F(D2, k8);     // Round 8
-   D2 = D2 ^ F(D1, k9);     // Round 9
-   D1 = D1 ^ F(D2, k10);    // Round 10
-   D2 = D2 ^ F(D1, k11);    // Round 11
-   D1 = D1 ^ F(D2, k12);    // Round 12
-   D1 = FL   (D1, ke3);     // FL
-   D2 = FLINV(D2, ke4);     // FLINV
-   D2 = D2 ^ F(D1, k13);    // Round 13
-
-Matsui, et al.               Informational                      [Page 6]
-RFC 3713             Camellia Encryption Algorithm            April 2004
-
-   D1 = D1 ^ F(D2, k14);    // Round 14
-   D2 = D2 ^ F(D1, k15);    // Round 15
-   D1 = D1 ^ F(D2, k16);    // Round 16
-   D2 = D2 ^ F(D1, k17);    // Round 17
-   D1 = D1 ^ F(D2, k18);    // Round 18
-   D1 = FL   (D1, ke5);     // FL
-   D2 = FLINV(D2, ke6);     // FLINV
-   D2 = D2 ^ F(D1, k19);    // Round 19
-   D1 = D1 ^ F(D2, k20);    // Round 20
-   D2 = D2 ^ F(D1, k21);    // Round 21
-   D1 = D1 ^ F(D2, k22);    // Round 22
-   D2 = D2 ^ F(D1, k23);    // Round 23
-   D1 = D1 ^ F(D2, k24);    // Round 24
-   D2 = D2 ^ kw3;           // Postwhitening
-   D1 = D1 ^ kw4;
-   */

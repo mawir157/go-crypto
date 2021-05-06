@@ -61,6 +61,7 @@ func RandomBlock(n int) (key []Word) {
 type AESCode struct {
 	numberOfRounds  int
 	key             []Word
+	keys            []Word
 }
 
 func MakeAES(key []Word) AESCode {
@@ -78,6 +79,14 @@ func MakeAES(key []Word) AESCode {
 
 func (code AESCode) blockSize() int {
 	return 16
+}
+
+func WordXOR(w1, w2 Word) (w3 Word) {
+	for i := 0; i < 4; i++ {
+		w3[i] = w1[i] ^ w2[i]
+	}
+
+	return
 }
 
 // returns a block of 44, 52, 60 Words
@@ -193,11 +202,16 @@ func (code AESCode) shiftRow(ws [4]Word, encrypt bool) (new [4]Word) {
 }
 
 // we encrypt 4 words (128 bits at a time)
-func (code AESCode) blockEncrypt(w [4]Word) ([4]Word) {
+func (code AESCode) blockEncrypt(bs_msg []byte) ([]byte) {
 	// KeyExpansion – round keys are derived from the cipher key using the AES key
 	// schedule. AES requires a separate 128-bit round key block for each round
 	// plus one more.
 	keys := code.keyExpansion()
+
+	// convert 16 bytes into 4 words
+	var w [4]Word
+	msgW := BytesToWords(bs_msg, false)
+	copy(w[:], msgW[:])
 
 	// Initial round key addition:
 		// AddRoundKey – each byte of the state is combined with a byte of the round
@@ -238,17 +252,22 @@ func (code AESCode) blockEncrypt(w [4]Word) ([4]Word) {
 	}
 	// ShiftRows
 	w = code.shiftRow(w, true)
+
 	// AddRoundKey
 	for j := 0; j < 4; j++ {
 		w[j] = WordXOR(w[j], keys[4*(code.numberOfRounds-1) + j])
 	}
 
-	return w	
+	return WordsToBytes(w[:])	
 }
 
 // we run the encrypt process in reverse!
-func (code AESCode) blockDecrypt(w [4]Word) ([4]Word) {
+func (code AESCode) blockDecrypt(bs_msg []byte) ([]byte) {
 	keys := code.keyExpansion()
+
+	var w [4]Word
+	msgW := BytesToWords(bs_msg, false)
+	copy(w[:], msgW[:])
 
 	// 'Final' round
 	// AddRoundKey
@@ -295,5 +314,5 @@ func (code AESCode) blockDecrypt(w [4]Word) ([4]Word) {
 		w[i] = WordXOR(w[i], keys[i])
 	}
 
-	return w
+	return WordsToBytes(w[:])
 }

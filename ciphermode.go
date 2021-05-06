@@ -1,10 +1,12 @@
 package jmtcrypto
 
-import ()
+import (
+	// "fmt"
+)
 
 type BlockCipher interface {
-	blockEncrypt(plaintext [4]Word) [4]Word
-	blockDecrypt(cipherText [4]Word) [4]Word
+	blockEncrypt(plaintext []byte) []byte
+	blockDecrypt(cipherText []byte) []byte
 	blockSize() int
 }
 
@@ -17,291 +19,193 @@ func ByteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
 	return
 }
 
-func WordStreamXOR(bs1, bs2 []Word) (bs3 []Word) {
-	bs3 = make([]Word, len(bs1))
-	for i := 0; i < len(bs1); i++ {
-		bs3[i] = WordXOR(bs1[i], bs2[i])
-	}
-
-	return
-}
-
-func WordXOR(w1, w2 Word) (w3 Word) {
-	for i := 0; i < 4; i++ {
-		w3[i] = w1[i] ^ w2[i]
-	}
-
-	return
-}
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Electronic Codebook (ECB)
 //
 func ECBEncrypt(bc BlockCipher, msg []byte) ([]byte) {
-	out := make([]Word, 0)
-	var block [4]Word
-	msgW := BytesToWords(msg, true)
+	out := []byte{}
 
-	for i := 0; i < len(msgW); i += 4 {
-		copy(block[:], msgW[i:i+4])
-		eBlock := bc.blockEncrypt(block)
-		out = append(out, eBlock[:]...)
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		eBlock := bc.blockEncrypt(msg[i:i+bc.blockSize()])
+		out = append(out, eBlock...)
 	}
 
-	outB := WordsToBytes(out)
-	return outB
+	return out
 }
 
 func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
-	out := make([]Word, 0)
-	var block [4]Word
+	out := []byte{}
 
-	msgW := BytesToWords(msg, false)
-
-	for i := 0; i < len(msgW); i += 4 {
-		copy(block[:], msgW[i:i+4])
-		eBlock := bc.blockDecrypt(block)
-		out = append(out, eBlock[:]...)
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		eBlock := bc.blockDecrypt(msg[i:i+bc.blockSize()])
+		out = append(out, eBlock...)
 	}
 
-	outB := WordsToBytes(out)
-
-	err := ValidatePad(outB)
+	err := ValidatePad(out)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
-	return outB, nil
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Cipher block chaining (CBC)
 //
-func CBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
-	out := make([]Word, 0)
-	var block [4]Word
+func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, true)
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		block := ByteStreamXOR(msg[i:i+bc.blockSize()], iv)
 
-	for i := 0; i < len(msgW); i += 4 {
-		copy(block[:], msgW[i:i+4])
-		for w := 0; w < 4; w++ {
-			block[w] = WordXOR(block[w], iv[w])
-		}
 		eBlock := bc.blockEncrypt(block)
-		out = append(out, eBlock[:]...)
+		out = append(out, eBlock...)
 
-		copy(iv[:], eBlock[:])
+		iv = eBlock
 	}
 
-	outB := WordsToBytes(out)
-
-	return outB
+	return out
 }
 
-func CBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
-	out := make([]Word, 0)
-	var block [4]Word
+func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, false)
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		eBlock := bc.blockDecrypt(msg[i:i+bc.blockSize()])
 
-	for i := 0; i < len(msgW); i += 4 {
-		copy(block[:], msgW[i:i+4])
-		eBlock := bc.blockDecrypt(block)
+		block := ByteStreamXOR(eBlock, iv)
+		out = append(out, block...)
 
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], iv[w])
-		}
-		out = append(out, eBlock[:]...)
-
-		copy(iv[:], block[:])
+		iv = msg[i:i+bc.blockSize()]
 	}
 
-	outB := WordsToBytes(out)
-
-	err := ValidatePad(outB)
+	err := ValidatePad(out)
 	if err != nil {
 		return nil, err
 	}
 
-	return outB, nil
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Propagating cipher block chaining (PCBC)
 //
-func PCBCEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
-	out := make([]Word, 0)
-	var block [4]Word
+func PCBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, true)
-
-	for i := 0; i < len(msgW); i += 4 {
-		copy(block[:], msgW[i:i+4])
-
-		for w := 0; w < 4; w++ {
-			block[w] = WordXOR(block[w], iv[w])
-		}
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		block := ByteStreamXOR(msg[i:i+bc.blockSize()], iv)
 
 		eBlock := bc.blockEncrypt(block)
-		out = append(out, eBlock[:]...)
+		out = append(out, eBlock...)
 
-		for w := 0; w < 4; w++ {
-			iv[w] = WordXOR(msgW[i+w], eBlock[w])
-		}
+		iv = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 	}
 
-	outB := WordsToBytes(out)
-
-	return outB
+	return out
 }
 
-func PCBCDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
-	out := make([]Word, 0)
-	var block [4]Word
+func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, false)
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		eBlock := bc.blockDecrypt(msg[i:i+bc.blockSize()])
+		block := ByteStreamXOR(iv, eBlock)
 
-	for i := 0; i < len(msgW); i += 4 {
-		copy(block[:], msgW[i:i+4])
+		out = append(out, block...)
 
-		eBlock := bc.blockDecrypt(block)
-
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], iv[w])
-		}
-
-		out = append(out, eBlock[:]...)
-
-		for w := 0; w < 4; w++ {
-			iv[w] = WordXOR(msgW[i+w], eBlock[w])
-		}
+		iv = ByteStreamXOR(msg[i:i+bc.blockSize()], block)
 	}
 
-	outB := WordsToBytes(out)
-
-	err := ValidatePad(outB)
+	err := ValidatePad(out)
 	if err != nil {
 		return nil, err
 	}
 
-	return outB, nil
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Propagating cipher block chaining (OFB)
+// Output feedback (OFB)
 //
-func OFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
-	out := make([]Word, 0)
+func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, true)
-
-	for i := 0; i < len(msgW); i += 4 {
+	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockEncrypt(iv)
 
-		for w := 0; w < 4; w++ {
-			iv[w] = eBlock[w]
-		}
+		iv = eBlock
+		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], msgW[i+w])
-		}
-
-		out = append(out, eBlock[:]...)
+		out = append(out, eBlock...)
 	}
 
-	outB := WordsToBytes(out)
-
-	return outB
+	return out
 }
 
-func OFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
-	out := make([]Word, 0)
+func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, false)
-
-	for i := 0; i < len(msgW); i += 4 {
+	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockEncrypt(iv)
 
-		for w := 0; w < 4; w++ {
-			iv[w] = eBlock[w]
-		}
+		iv = eBlock
+		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], msgW[i+w])
-		}
-
-		out = append(out, eBlock[:]...)
+		out = append(out, eBlock...)
 	}
 
-	outB := WordsToBytes(out)
-
-	err := ValidatePad(outB)
+	err := ValidatePad(out)
 	if err != nil {
 		return nil, err
 	}
 
-	return outB, nil
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Cipher feedback (CFB)
 //
-func CFBEncrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte) {
-	out := make([]Word, 0)
+func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, true)
-
-	for i := 0; i < len(msgW); i += 4 {
+	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockEncrypt(iv)
+		
+		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], msgW[i+w])
-		}
+		iv = eBlock
 
-		for w := 0; w < 4; w++ {
-			iv[w] = eBlock[w]
-		}
-
-		out = append(out, eBlock[:]...)
+		out = append(out, eBlock...)
 	}
 
-	outB := WordsToBytes(out)
-
-	return outB
+	return out
 }
 
-func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
-	out := make([]Word, 0)
+func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
+	out := []byte{}
 
-	msgW := BytesToWords(msg, false)
-
-	for i := 0; i < len(msgW); i += 4 {
+	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockEncrypt(iv)
 
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], msgW[i+w])
-		}
+		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
-		for w := 0; w < 4; w++ {
-			iv[w] = msgW[i+w]
-		}
+		iv = msg[i:i+bc.blockSize()]
 
-		out = append(out, eBlock[:]...)
+		out = append(out, eBlock...)
 	}
 
-	outB := WordsToBytes(out)
-
-	err := ValidatePad(outB)
+	err := ValidatePad(out)
 	if err != nil {
 		return nil, err
 	}
 
-	return outB, nil
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -311,29 +215,22 @@ func CFBDecrypt(bc BlockCipher, iv [4]Word, msg []byte) ([]byte, error) {
 func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 
-	out := make([]Word, 0)
+	out := []byte{}
 
-	msgW := BytesToWords(msg, true)
-
-	for i := 0; i < len(msgW); i += 4 {
-		var iv [4]Word
-		temp := BytesToWords(append(nonce, counter...), false)
-		copy(iv[:], temp)
+	for i := 0; i < len(msg); i += bc.blockSize() {
+		iv := append(nonce, counter...)
 
 		eBlock := bc.blockEncrypt(iv)
+		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
-		for w := 0; w < 4; w++ {
-			eBlock[w] = WordXOR(eBlock[w], msgW[i+w])
-		}
 
-		out = append(out, eBlock[:]...)
+
+		out = append(out, eBlock...)
 
 		counter = incrementCTR(counter)
 	}
 
-	outB := WordsToBytes(out)
-
-	return outB[:len(msg)]
+	return out[:len(msg)]
 }
 
 func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {

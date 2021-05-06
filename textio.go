@@ -203,7 +203,6 @@ func WordsToBytes(ws []Word) (data []byte) {
 // The Error messages are intentially vague to prevent leaking information!
 func ValidatePad(bs []byte) (error) {
 	final := bs[len(bs) - 1]
-
 	if len(bs) % 16 != 0 {
 		return errors.New("Invalid Pad")
 	}
@@ -212,7 +211,11 @@ func ValidatePad(bs []byte) (error) {
 		return errors.New("Invalid Pad")
 	}
 
-	if int(final) == 0 {
+	if final == 0x00 {
+		return errors.New("Invalid Pad")
+	}
+
+	if final > 0x10 {
 		return errors.New("Invalid Pad")
 	}
 
