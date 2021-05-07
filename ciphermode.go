@@ -213,8 +213,13 @@ func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 //
 func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
-
 	out := []byte{}
+
+	// add extra byte to end so we can go process in blocks
+	msgLen := len(msg)
+	n := 16 - (msgLen % 16)
+	pad := make([]byte, n)
+	msg = append(msg, pad...)
 
 	for i := 0; i < len(msg); i += bc.blockSize() {
 		iv := append(nonce, counter...)
@@ -222,14 +227,12 @@ func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 		eBlock := bc.blockEncrypt(iv)
 		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
-
-
 		out = append(out, eBlock...)
 
 		counter = incrementCTR(counter)
 	}
 
-	return out[:len(msg)]
+	return out[:msgLen]
 }
 
 func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {
