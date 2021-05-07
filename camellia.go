@@ -41,20 +41,15 @@ type CamelliaCode struct {
 }
 
 func MakeCamellia(key []byte) CamelliaCode {
-	// n := 0
-	// if len(key) == 4 {
-	// 	n = 11
-	// } else if len(key) == 6 {
-	// 	n = 13
-	// } else if len(key) == 8 {
-	// 	n = 15
-	// }
-
 	return CamelliaCode{key:key}
 }
 
 func (code CamelliaCode) blockSize() int {
 	return 16 // 16 bytes = 128 bits
+}
+
+func (code CamelliaCode) getKey() []byte {
+	return code.key
 }
 
 // 16 Bytes = 128
