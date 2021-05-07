@@ -4,6 +4,17 @@ import (
 	// "fmt"
 )
 
+type CipherMode int
+const (
+	ECB    CipherMode = iota
+	CBC
+	PCB
+	OFB
+	CTR
+	CFB
+	PRNGSTREAM
+)
+
 type BlockCipher interface {
 	blockEncrypt(plaintext []byte) []byte
 	blockDecrypt(cipherText []byte) []byte
