@@ -2,6 +2,7 @@ package jmtcrypto
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type HashFunction interface {
 
 func compareBytes(b1, b2 []byte) bool {
 	if len(b1) != len(b2) {
+fmt.Println("a")
 		return false
 	}
 
@@ -72,9 +74,10 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	start := time.Now()
 
 	// grab the hash
-	h1 := msg[len(msg) - hash.size():]
-	cipherText := msg[:len(msg) - hash.size()]
+	h1 := make([]byte, hash.size())
+	copy(h1,msg[len(msg) - hash.size():])
 
+	cipherText := msg[:len(msg) - hash.size()]
 	cipher2 := append(cipherText, key2...)
 	h2 := hash.hash(cipher2)
 
@@ -83,7 +86,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if !compareBytes(h1, h2) {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")	
+		return out, errors.New("Cannot Authenticate 1")	
 	}
 
 	switch mode {
@@ -105,7 +108,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if err != nil {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")		
+		return out, errors.New("Cannot Authenticate 2")		
 	}
 
 	return out, nil
