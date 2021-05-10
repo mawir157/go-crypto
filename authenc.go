@@ -111,6 +111,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		return out, errors.New("Cannot Authenticate 2")		
 	}
 
+	wait(start)
 	return out, nil
 }
 
@@ -188,6 +189,7 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		return out, errors.New("Cannot Authenticate")		
 	}
 
+	wait(start)
 	return out, nil
 }
 
@@ -198,13 +200,11 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	            mode CipherMode, extra map[string]([]byte)) []byte {
 
-	cipherText := []byte{}
-
 	msg2 := append(msg, bc.getKey()...)
 	h := hash.hash(msg2)
 
-	msg3 := append(msg, h...)
-
+	msg3 := bytePad(append(msg, h...))
+	cipherText := []byte{}
 	switch mode {
 		case ECB:
 			cipherText = ECBEncrypt(bc, msg3)
@@ -221,12 +221,11 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		// case PRNGSTREAM:
 		// 	cipherText = ECBEncrypt(bc, msg3)
 	}
-
 	return cipherText
 }
 
 func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
-                mode CipherMode, key2 []byte, extra map[string]([]byte)) ([]byte, error) {
+                mode CipherMode, extra map[string]([]byte)) ([]byte, error) {
 	start := time.Now()
 
 	out := []byte{}
@@ -251,10 +250,13 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if err != nil {
 		wait(start)
+		fmt.Println(out)
 		return out, errors.New("Cannot Authenticate")		
 	}
 
-	h1 := out[len(out) - hash.size():]
+	h1 := make([]byte, hash.size())
+	copy(h1,msg[len(msg) - hash.size():])
+
 	plainText := out[:len(out) - hash.size()]
 
 	plainText2 := append(plainText, bc.getKey()...)
@@ -265,5 +267,6 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		return out, errors.New("Cannot Authenticate")	
 	}
 
+	wait(start)
 	return out, nil
 }

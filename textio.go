@@ -106,7 +106,16 @@ func WordsToBytes(ws []Word) (data []byte) {
 	}
 
 	return
+}
 
+func bytePad(bs []byte) []byte {
+	padValue := byte(16 -(len(bs) % 16))
+
+	for i := byte(0); i < padValue; i++ {
+		bs = append(bs, padValue)
+	}
+
+	return bs
 }
 
 // The Error messages are intentially vague to prevent leaking information!
