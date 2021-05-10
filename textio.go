@@ -118,6 +118,17 @@ func bytePad(bs []byte) []byte {
 	return bs
 }
 
+func removePad(bs []byte) ([]byte, error) {
+	err := ValidatePad(bs)
+
+	if err != nil {
+		return bs, err
+	}
+	final := int(bs[len(bs) - 1])
+
+	return bs[:len(bs) - final], nil
+}
+
 // The Error messages are intentially vague to prevent leaking information!
 func ValidatePad(bs []byte) (error) {
 	final := bs[len(bs) - 1]

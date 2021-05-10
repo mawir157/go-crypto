@@ -247,15 +247,21 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		// case PRNGSTREAM:
 		// 	out, err = ECBDecrypt(bc, msg)
 	}
-
 	if err != nil {
 		wait(start)
 		fmt.Println(out)
-		return out, errors.New("Cannot Authenticate")		
+		return out, errors.New("Cannot Authenticate")
+	}
+
+	out, err = removePad(out)
+	if err != nil {
+		wait(start)
+		fmt.Println(out)
+		return out, errors.New("Cannot Authenticate")
 	}
 
 	h1 := make([]byte, hash.size())
-	copy(h1,msg[len(msg) - hash.size():])
+	copy(h1, out[len(out) - hash.size():])
 
 	plainText := out[:len(out) - hash.size()]
 
@@ -264,7 +270,7 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if !compareBytes(h1, h2) {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")	
+		return out, errors.New("Cannot Authenticate")
 	}
 
 	wait(start)
