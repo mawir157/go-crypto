@@ -86,7 +86,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if !compareBytes(h1, h2) {
 		wait(start)
-		return out, errors.New("Cannot Authenticate 1")	
+		return out, errors.New("Cannot Authenticate")	
 	}
 
 	switch mode {
@@ -108,7 +108,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if err != nil {
 		wait(start)
-		return out, errors.New("Cannot Authenticate 2")		
+		return out, errors.New("Cannot Authenticate")		
 	}
 
 	wait(start)
@@ -204,6 +204,7 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	h := hash.hash(msg2)
 
 	msg3 := bytePad(append(msg, h...))
+
 	cipherText := []byte{}
 	switch mode {
 		case ECB:
@@ -221,6 +222,7 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		// case PRNGSTREAM:
 		// 	cipherText = ECBEncrypt(bc, msg3)
 	}
+
 	return cipherText
 }
 
@@ -247,6 +249,7 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		// case PRNGSTREAM:
 		// 	out, err = ECBDecrypt(bc, msg)
 	}
+
 	if err != nil {
 		wait(start)
 		fmt.Println(out)
@@ -274,5 +277,5 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	}
 
 	wait(start)
-	return out, nil
+	return plainText, nil
 }
