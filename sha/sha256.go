@@ -1,4 +1,4 @@
-package jmtcrypto
+package sha
 
 // remove this later
 import (
