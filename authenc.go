@@ -13,7 +13,6 @@ type HashFunction interface {
 
 func compareBytes(b1, b2 []byte) bool {
 	if len(b1) != len(b2) {
-fmt.Println("a")
 		return false
 	}
 
@@ -47,16 +46,16 @@ func EtMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	switch mode {
 		case ECB:
 			cipherText = ECBEncrypt(bc, msg)
-		// case CBC:
-		// 	cipherText = ECBEncrypt(bc, msg)
-		// case PCB:
-		// 	cipherText = ECBEncrypt(bc, msg)
-		// case OFB:
-		// 	cipherText = ECBEncrypt(bc, msg)
+		case CBC:
+			cipherText = CBCEncrypt(bc, extra["iv"], msg)
+		case PCB:
+			cipherText = PCBCEncrypt(bc, extra["iv"], msg)
+		case OFB:
+			cipherText = OFBEncrypt(bc, extra["iv"], msg)
 		// case CTR:
 		// 	cipherText = ECBEncrypt(bc, msg)
-		// case CFB:
-		// 	cipherText = ECBEncrypt(bc, msg)
+		case CFB:
+			cipherText = CFBEncrypt(bc, extra["iv"], msg)
 		// case PRNGSTREAM:
 		// 	cipherText = ECBEncrypt(bc, msg)
 	}
@@ -92,16 +91,16 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	switch mode {
 		case ECB:
 			out, err = ECBDecrypt(bc, cipherText)
-		// case CBC:
-		// 	out, err = ECBDecrypt(bc, cipherText)
-		// case PCB:
-		// 	out, err = ECBDecrypt(bc, cipherText)
-		// case OFB:
-		// 	out, err = ECBDecrypt(bc, cipherText)
+		case CBC:
+			out, err = CBCDecrypt(bc, extra["iv"], cipherText)
+		case PCB:
+			out, err = PCBCDecrypt(bc, extra["iv"], cipherText)
+		case OFB:
+			out, err = OFBDecrypt(bc, extra["iv"], cipherText)
 		// case CTR:
 		// 	out, err = ECBDecrypt(bc, cipherText)
-		// case CFB:
-		// 	out, err = ECBDecrypt(bc, cipherText)
+		case CFB:
+			out, err = CFBDecrypt(bc, extra["iv"], cipherText)
 		// case PRNGSTREAM:
 		// 	out, err = ECBDecrypt(bc, cipherText)
 	}
@@ -126,16 +125,16 @@ func EaMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	switch mode {
 		case ECB:
 			cipherText = ECBEncrypt(bc, msg)
-		// case CBC:
-		// 	cipherText = ECBEncrypt(bc, msg)
-		// case PCB:
-		// 	cipherText = ECBEncrypt(bc, msg)
-		// case OFB:
-		// 	cipherText = ECBEncrypt(bc, msg)
+		case CBC:
+			cipherText = CBCEncrypt(bc, extra["iv"], msg)
+		case PCB:
+			cipherText = PCBCEncrypt(bc, extra["iv"], msg)
+		case OFB:
+			cipherText = OFBEncrypt(bc, extra["iv"], msg)
 		// case CTR:
 		// 	cipherText = ECBEncrypt(bc, msg)
-		// case CFB:
-		// 	cipherText = ECBEncrypt(bc, msg)
+		case CFB:
+			cipherText = CFBEncrypt(bc, extra["iv"], msg)
 		// case PRNGSTREAM:
 		// 	cipherText = ECBEncrypt(bc, msg)
 	}
@@ -162,16 +161,16 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	switch mode {
 		case ECB:
 			out, err = ECBDecrypt(bc, cipherText)
-		// case CBC:
-		// 	out, err = ECBDecrypt(bc, cipherText)
-		// case PCB:
-		// 	out, err = ECBDecrypt(bc, cipherText)
-		// case OFB:
-		// 	out, err = ECBDecrypt(bc, cipherText)
+		case CBC:
+			out, err = CBCDecrypt(bc, extra["iv"], cipherText)
+		case PCB:
+			out, err = PCBCDecrypt(bc, extra["iv"], cipherText)
+		case OFB:
+			out, err = OFBDecrypt(bc, extra["iv"], cipherText)
 		// case CTR:
 		// 	out, err = ECBDecrypt(bc, cipherText)
-		// case CFB:
-		// 	out, err = ECBDecrypt(bc, cipherText)
+		case CFB:
+			out, err = CFBDecrypt(bc, extra["iv"], cipherText)
 		// case PRNGSTREAM:
 		// 	out, err = ECBDecrypt(bc, cipherText)
 	}
@@ -209,16 +208,16 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	switch mode {
 		case ECB:
 			cipherText = ECBEncrypt(bc, msg3)
-		// case CBC:
-		// 	cipherText = ECBEncrypt(bc, msg3)
-		// case PCB:
-		// 	cipherText = ECBEncrypt(bc, msg3)
-		// case OFB:
-		// 	cipherText = ECBEncrypt(bc, msg3)
+		case CBC:
+			cipherText = CBCEncrypt(bc, extra["iv"], msg3)
+		case PCB:
+			cipherText = PCBCEncrypt(bc, extra["iv"], msg3)
+		case OFB:
+			cipherText = OFBEncrypt(bc, extra["iv"], msg3)
 		// case CTR:
 		// 	cipherText = ECBEncrypt(bc, msg3)
-		// case CFB:
-		// 	cipherText = ECBEncrypt(bc, msg3)
+		case CFB:
+			cipherText = CFBEncrypt(bc, extra["iv"], msg3)
 		// case PRNGSTREAM:
 		// 	cipherText = ECBEncrypt(bc, msg3)
 	}
@@ -236,16 +235,16 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	switch mode {
 		case ECB:
 			out, err = ECBDecrypt(bc, msg)
-		// case CBC:
-		// 	out, err = ECBDecrypt(bc, msg)
-		// case PCB:
-		// 	out, err = ECBDecrypt(bc, msg)
-		// case OFB:
-		// 	out, err = ECBDecrypt(bc, msg)
+		case CBC:
+			out, err = CBCDecrypt(bc, extra["iv"], msg)
+		case PCB:
+			out, err = PCBCDecrypt(bc, extra["iv"], msg)
+		case OFB:
+			out, err = OFBDecrypt(bc, extra["iv"], msg)
 		// case CTR:
 		// 	out, err = ECBDecrypt(bc, msg)
-		// case CFB:
-		// 	out, err = ECBDecrypt(bc, msg)
+		case CFB:
+			out, err = CFBDecrypt(bc, extra["iv"], msg)
 		// case PRNGSTREAM:
 		// 	out, err = ECBDecrypt(bc, msg)
 	}
@@ -259,7 +258,6 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	out, err = removePad(out)
 	if err != nil {
 		wait(start)
-		fmt.Println(out)
 		return out, errors.New("Cannot Authenticate")
 	}
 
