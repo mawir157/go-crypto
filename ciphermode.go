@@ -4,13 +4,25 @@ import (
 	// "fmt"
 )
 
+type CipherMode int
+const (
+	ECB    CipherMode = iota
+	CBC
+	PCB
+	OFB
+	CTR
+	CFB
+	PRNGSTREAM
+)
+
 type BlockCipher interface {
 	blockEncrypt(plaintext []byte) []byte
 	blockDecrypt(cipherText []byte) []byte
 	blockSize() int
+	getKey() []byte
 }
 
-func ByteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
+func byteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
 	bs3 = make([]byte, len(bs1))
 	for i := 0; i < len(bs1); i++ {
 		bs3[i] = bs1[i] ^ bs2[i]
@@ -58,7 +70,7 @@ func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.blockSize() {
-		block := ByteStreamXOR(msg[i:i+bc.blockSize()], iv)
+		block := byteStreamXOR(msg[i:i+bc.blockSize()], iv)
 
 		eBlock := bc.blockEncrypt(block)
 		out = append(out, eBlock...)
@@ -75,7 +87,7 @@ func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockDecrypt(msg[i:i+bc.blockSize()])
 
-		block := ByteStreamXOR(eBlock, iv)
+		block := byteStreamXOR(eBlock, iv)
 		out = append(out, block...)
 
 		iv = msg[i:i+bc.blockSize()]
@@ -96,12 +108,12 @@ func PCBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.blockSize() {
-		block := ByteStreamXOR(msg[i:i+bc.blockSize()], iv)
+		block := byteStreamXOR(msg[i:i+bc.blockSize()], iv)
 
 		eBlock := bc.blockEncrypt(block)
 		out = append(out, eBlock...)
 
-		iv = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
+		iv = byteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 	}
 
 	return out
@@ -112,11 +124,11 @@ func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 
 	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockDecrypt(msg[i:i+bc.blockSize()])
-		block := ByteStreamXOR(iv, eBlock)
+		block := byteStreamXOR(iv, eBlock)
 
 		out = append(out, block...)
 
-		iv = ByteStreamXOR(msg[i:i+bc.blockSize()], block)
+		iv = byteStreamXOR(msg[i:i+bc.blockSize()], block)
 	}
 
 	err := ValidatePad(out)
@@ -138,7 +150,7 @@ func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 		eBlock := bc.blockEncrypt(iv)
 
 		iv = eBlock
-		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
+		eBlock = byteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
 		out = append(out, eBlock...)
 	}
@@ -153,7 +165,7 @@ func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 		eBlock := bc.blockEncrypt(iv)
 
 		iv = eBlock
-		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
+		eBlock = byteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
 		out = append(out, eBlock...)
 	}
@@ -176,7 +188,7 @@ func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockEncrypt(iv)
 		
-		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
+		eBlock = byteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
 		iv = eBlock
 
@@ -192,7 +204,7 @@ func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	for i := 0; i < len(msg); i += bc.blockSize() {
 		eBlock := bc.blockEncrypt(iv)
 
-		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
+		eBlock = byteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
 		iv = msg[i:i+bc.blockSize()]
 
@@ -225,7 +237,7 @@ func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 		iv := append(nonce, counter...)
 
 		eBlock := bc.blockEncrypt(iv)
-		eBlock = ByteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
+		eBlock = byteStreamXOR(msg[i:i+bc.blockSize()], eBlock)
 
 		out = append(out, eBlock...)
 

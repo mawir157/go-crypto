@@ -60,6 +60,7 @@ func RandomBlock(n int) (key []Word) {
 
 type AESCode struct {
 	numberOfRounds  int
+	keyB            []byte // hack sort this out later
 	key             []Word
 	keys            []Word
 }
@@ -76,11 +77,15 @@ func MakeAES(key []byte) AESCode {
 		n = 15
 	}
 
-	return AESCode{numberOfRounds:n, key:keyWords}
+	return AESCode{numberOfRounds:n, keyB:key, key:keyWords}
 }
 
 func (code AESCode) blockSize() int {
 	return 16
+}
+
+func (code AESCode) getKey() []byte {
+	return code.keyB
 }
 
 func WordXOR(w1, w2 Word) (w3 Word) {

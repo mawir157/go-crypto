@@ -1,4 +1,4 @@
-package jmtcrypto
+package mce
 
 type Bitset = []bool
 
