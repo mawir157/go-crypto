@@ -80,7 +80,7 @@ func MakeAES(key []byte) AESCode {
 	return AESCode{numberOfRounds:n, keyB:key, key:keyWords}
 }
 
-func (code AESCode) blockSize() int {
+func (code AESCode) BlockSize() int {
 	return 16
 }
 

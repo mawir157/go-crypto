@@ -8,7 +8,7 @@ import (
 
 type HashFunction interface {
 	Hash(data []byte) []byte
-	size()            int
+	Size()            int
 }
 
 func compareBytes(b1, b2 []byte) bool {
@@ -73,10 +73,10 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	start := time.Now()
 
 	// grab the hash
-	h1 := make([]byte, hash.size())
-	copy(h1,msg[len(msg) - hash.size():])
+	h1 := make([]byte, hash.Size())
+	copy(h1,msg[len(msg) - hash.Size():])
 
-	cipherText := msg[:len(msg) - hash.size()]
+	cipherText := msg[:len(msg) - hash.Size()]
 	cipher2 := append(cipherText, key2...)
 	h2 := hash.Hash(cipher2)
 
@@ -152,8 +152,8 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	start := time.Now()
 
 	// grab the hash
-	h1 := msg[len(msg) - hash.size():]
-	cipherText := msg[:len(msg) - hash.size()]
+	h1 := msg[len(msg) - hash.Size():]
+	cipherText := msg[:len(msg) - hash.Size()]
 
 	out := []byte{}
 	var err error
@@ -261,10 +261,10 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 		return out, errors.New("Cannot Authenticate")
 	}
 
-	h1 := make([]byte, hash.size())
-	copy(h1, out[len(out) - hash.size():])
+	h1 := make([]byte, hash.Size())
+	copy(h1, out[len(out) - hash.Size():])
 
-	plainText := out[:len(out) - hash.size()]
+	plainText := out[:len(out) - hash.Size()]
 
 	plainText2 := append(plainText, bc.getKey()...)
 	h2 := hash.Hash(plainText2)

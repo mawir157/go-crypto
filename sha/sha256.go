@@ -13,7 +13,7 @@ func MakeSHA256() SHA256 {
 	return SHA256{sizeBits:256}
 }
 
-func (hC SHA256) size() int {
+func (hC SHA256) Size() int {
 	return (hC.sizeBits / 8)
 }
 

@@ -9,7 +9,7 @@ func MakeNULL(key []byte) NULLCode {
 	return NULLCode{key:key}
 }
 
-func (code NULLCode) blockSize() int {
+func (code NULLCode) BlockSize() int {
 	return 16
 }
 

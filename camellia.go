@@ -44,7 +44,7 @@ func MakeCamellia(key []byte) CamelliaCode {
 	return CamelliaCode{key:key}
 }
 
-func (code CamelliaCode) blockSize() int {
+func (code CamelliaCode) BlockSize() int {
 	return 16 // 16 bytes = 128 bits
 }
 
