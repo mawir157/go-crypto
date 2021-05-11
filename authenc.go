@@ -7,7 +7,7 @@ import (
 )
 
 type HashFunction interface {
-	hash(data []byte) []byte
+	Hash(data []byte) []byte
 	size()            int
 }
 
@@ -52,8 +52,8 @@ func EtMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 			cipherText = PCBCEncrypt(bc, extra["iv"], msg)
 		case OFB:
 			cipherText = OFBEncrypt(bc, extra["iv"], msg)
-		// case CTR:
-		// 	cipherText = ECBEncrypt(bc, msg)
+		case CTR:
+			cipherText = CTREncrypt(bc, extra["nonce"], msg)
 		case CFB:
 			cipherText = CFBEncrypt(bc, extra["iv"], msg)
 		// case PRNGSTREAM:
@@ -61,7 +61,7 @@ func EtMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	}
 
 	cipher2 := append(cipherText, key2...)
-	h := hash.hash(cipher2)
+	h := hash.Hash(cipher2)
 
 	out := append(cipherText, h...)
 
@@ -78,7 +78,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	cipherText := msg[:len(msg) - hash.size()]
 	cipher2 := append(cipherText, key2...)
-	h2 := hash.hash(cipher2)
+	h2 := hash.Hash(cipher2)
 
 	out := []byte{}
 	var err error
@@ -97,8 +97,8 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 			out, err = PCBCDecrypt(bc, extra["iv"], cipherText)
 		case OFB:
 			out, err = OFBDecrypt(bc, extra["iv"], cipherText)
-		// case CTR:
-		// 	out, err = ECBDecrypt(bc, cipherText)
+		case CTR:
+			out, err = CTRDecrypt(bc, extra["nonce"], cipherText)
 		case CFB:
 			out, err = CFBDecrypt(bc, extra["iv"], cipherText)
 		// case PRNGSTREAM:
@@ -131,8 +131,8 @@ func EaMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 			cipherText = PCBCEncrypt(bc, extra["iv"], msg)
 		case OFB:
 			cipherText = OFBEncrypt(bc, extra["iv"], msg)
-		// case CTR:
-		// 	cipherText = ECBEncrypt(bc, msg)
+		case CTR:
+			cipherText = CTREncrypt(bc, extra["nonce"], msg)
 		case CFB:
 			cipherText = CFBEncrypt(bc, extra["iv"], msg)
 		// case PRNGSTREAM:
@@ -140,7 +140,7 @@ func EaMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	}
 
 	cipher2 := append(msg, bc.getKey()...)
-	h := hash.hash(cipher2)
+	h := hash.Hash(cipher2)
 
 	out := append(cipherText, h...)
 
@@ -167,8 +167,8 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 			out, err = PCBCDecrypt(bc, extra["iv"], cipherText)
 		case OFB:
 			out, err = OFBDecrypt(bc, extra["iv"], cipherText)
-		// case CTR:
-		// 	out, err = ECBDecrypt(bc, cipherText)
+		case CTR:
+			out, err = CTRDecrypt(bc, extra["nonce"], cipherText)
 		case CFB:
 			out, err = CFBDecrypt(bc, extra["iv"], cipherText)
 		// case PRNGSTREAM:
@@ -176,7 +176,7 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	}
 
 	out2 := append(out, bc.getKey()...)
-	h2 := hash.hash(out2)
+	h2 := hash.Hash(out2)
 
 	if !compareBytes(h1, h2) {
 		wait(start)
@@ -200,7 +200,7 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	            mode CipherMode, extra map[string]([]byte)) []byte {
 
 	msg2 := append(msg, bc.getKey()...)
-	h := hash.hash(msg2)
+	h := hash.Hash(msg2)
 
 	msg3 := bytePad(append(msg, h...))
 
@@ -214,8 +214,8 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 			cipherText = PCBCEncrypt(bc, extra["iv"], msg3)
 		case OFB:
 			cipherText = OFBEncrypt(bc, extra["iv"], msg3)
-		// case CTR:
-		// 	cipherText = ECBEncrypt(bc, msg3)
+		case CTR:
+			cipherText = CTREncrypt(bc, extra["nonce"], msg3)
 		case CFB:
 			cipherText = CFBEncrypt(bc, extra["iv"], msg3)
 		// case PRNGSTREAM:
@@ -241,8 +241,8 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 			out, err = PCBCDecrypt(bc, extra["iv"], msg)
 		case OFB:
 			out, err = OFBDecrypt(bc, extra["iv"], msg)
-		// case CTR:
-		// 	out, err = ECBDecrypt(bc, msg)
+		case CTR:
+			out, err = CTRDecrypt(bc, extra["nonce"],msg)
 		case CFB:
 			out, err = CFBDecrypt(bc, extra["iv"], msg)
 		// case PRNGSTREAM:
@@ -267,7 +267,7 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	plainText := out[:len(out) - hash.size()]
 
 	plainText2 := append(plainText, bc.getKey()...)
-	h2 := hash.hash(plainText2)
+	h2 := hash.Hash(plainText2)
 
 	if !compareBytes(h1, h2) {
 		wait(start)
