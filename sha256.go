@@ -50,7 +50,7 @@ func (hC SHA256) Hash(data []byte) []byte {
 		chunk := L[i:(i+64)]
 		w := [64]uint32{}
 		for j := 0; j < 16; j++ {
-			w[j], _ = BytesToInt(chunk[4*j:4*(j+1)])
+			w[j], _ = BytesToInt(chunk[4*j:4*(j+1)], true)
 		}
 
 		for j := 16; j < 64; j++ {
@@ -100,7 +100,7 @@ func (hC SHA256) Hash(data []byte) []byte {
 	}
 	hashed := []byte{}
 	for _, i32 := range h_arr {
-		hashed = append(hashed, IntTo4Bytes(i32)...)
+		hashed = append(hashed, IntTo4Bytes(i32, true)...)
 	}
 
 	return hashed[:]
