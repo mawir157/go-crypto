@@ -1,9 +1,7 @@
-package sha
+package jmtcrypto
 
-// remove this later
-import (
-	"errors"
-)
+// import "jmtcrypto/utils"
+// import "errors"
 
 type SHA256 struct {
 	sizeBits int
@@ -45,19 +43,19 @@ func (hC SHA256) Hash(data []byte) []byte {
 		L = append(L, 0x00)
 	}
 
-	L = append(L, intTo8Bytes(8*len(data))...)
+	L = append(L, IntTo8Bytes(8*len(data))...)
 	// at this point L should be a multiple of 64 bytes..
 	// .. so we can step through it in chunks of 64
 	for i := 0; i < len(L); i += 64 {
 		chunk := L[i:(i+64)]
 		w := [64]uint32{}
 		for j := 0; j < 16; j++ {
-			w[j], _ = bytesToInt(chunk[4*j:4*(j+1)])
+			w[j], _ = BytesToInt(chunk[4*j:4*(j+1)])
 		}
 
 		for j := 16; j < 64; j++ {
-			s0 := rightRotate(w[j-15], 7) ^ rightRotate(w[j-15], 18) ^ (w[j-15] >> 3)
-			s1 := rightRotate(w[j-2], 17) ^ rightRotate(w[j-2],  19) ^ (w[j-2] >> 10)
+			s0 := RightRotate(w[j-15], 7) ^ RightRotate(w[j-15], 18) ^ (w[j-15] >> 3)
+			s1 := RightRotate(w[j-2], 17) ^ RightRotate(w[j-2],  19) ^ (w[j-2] >> 10)
 
 			w[j] = w[j-16] + s0 + w[j-7] + s1
 		}
@@ -73,10 +71,10 @@ func (hC SHA256) Hash(data []byte) []byte {
 		h := h_arr[7]
 
 		for j := 0; j < 64; j++ {
-			s1 := rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)
+			s1 := RightRotate(e, 6) ^ RightRotate(e, 11) ^ RightRotate(e, 25)
 			ch := (e & f) ^ ((^e) & g)
 			temp1 := h + s1 + ch + k[j] + w[j]
-			s0 := rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)
+			s0 := RightRotate(a, 2) ^ RightRotate(a, 13) ^ RightRotate(a, 22)
 			maj := (a & b) ^ (a & c) ^ (b & c)
 			temp2 := s0 + maj
 
@@ -102,60 +100,51 @@ func (hC SHA256) Hash(data []byte) []byte {
 	}
 	hashed := []byte{}
 	for _, i32 := range h_arr {
-		hashed = append(hashed, intTo4Bytes(i32)...)
+		hashed = append(hashed, IntTo4Bytes(i32)...)
 	}
 
 	return hashed[:]
 }
 
-func rightRotate(i uint32, n int) uint32 {
-	top := (i << (32 - n))
-	bottom := (i >> n)
 
-	return top + bottom
-}
+// func RightRotate(i uint32, n int) uint32 {
+// 	top := (i << (32 - n))
+// 	bottom := (i >> n)
 
-func intTo4Bytes(l uint32) []byte {
-	bytes := []byte{0x00, 0x00, 0x00, 0x00}
-	for i := 0; i < 4; i++ {
-		q := byte(l & 0xff)
-		bytes[3 - i] = q
-		l >>= 8
-	}
+// 	return top + bottom
+// }
 
-	return bytes
-}
+// func IntTo4Bytes(l uint32) []byte {
+// 	bytes := []byte{0x00, 0x00, 0x00, 0x00}
+// 	for i := 0; i < 4; i++ {
+// 		q := byte(l & 0xff)
+// 		bytes[3 - i] = q
+// 		l >>= 8
+// 	}
 
-func intTo8Bytes(l int) []byte {
-	bytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-	for i := 0; i < 8; i++ {
-		q := byte(l & 0xff)
-		bytes[7 - i] = q
-		l >>= 8
-	}
+// 	return bytes
+// }
 
-	return bytes
-}
+// func IntTo8Bytes(l int) []byte {
+// 	bytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+// 	for i := 0; i < 8; i++ {
+// 		q := byte(l & 0xff)
+// 		bytes[7 - i] = q
+// 		l >>= 8
+// 	}
 
-func bytesToInt(arr []byte) (uint32, error) {
-	if len(arr) != 4 {
-		return 0, errors.New("Not 4 bytes")
-	}
-	value := uint32(0)
-	for _, v := range arr {
-		value <<= 8
-		value += uint32(v)
-	}
+// 	return bytes
+// }
 
-	return value, nil
-}
+// func BytesToInt(arr []byte) (uint32, error) {
+// 	if len(arr) != 4 {
+// 		return 0, errors.New("Not 4 bytes")
+// 	}
+// 	value := uint32(0)
+// 	for _, v := range arr {
+// 		value <<= 8
+// 		value += uint32(v)
+// 	}
 
-
-func tripleXOR(a,b,c []byte) []byte {
-	out := make([]byte, 8)
-	for i := 0; i < 8; i++ {
-		out[i] = a[i] ^ b[i] ^ c[i]
-	}
-
-	return out
-}
+// 	return value, nil
+// }

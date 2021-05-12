@@ -1,11 +1,6 @@
-package hmac
+package jmtcrypto
 
 import "fmt"
-
-type HashFunction interface {
-	Hash(data []byte) []byte
-	Size()            int
-}
 
 func HMAC(key []byte, msg []byte, hash HashFunction) []byte {
 	b := 2*hash.Size() // fix this inner vs outerblock size

@@ -1,4 +1,4 @@
-package rand
+package jmtcrypto
 
 import (
 	"time"

@@ -1,4 +1,4 @@
-package dh // diffie hellman
+package dh
 
 import (
 	"math/big"
