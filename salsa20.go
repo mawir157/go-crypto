@@ -2,9 +2,18 @@ package jmtcrypto
 
 import "fmt"
 
-var diagonal, _ = ParseFromAscii("expand 32-byte k", false)
-
 func salsaBlock(key, nonce []byte) []byte {
+	diagonal := []byte{}
+	if len(key) == 32 {
+		// do nothing
+		diagonal, _ = ParseFromAscii("expand 32-byte k", false)
+	} else if len(key) == 16 {
+		key = append(key, key...)
+		 diagonal, _ = ParseFromAscii("expand 16-byte k", false)
+	} else {
+		fmt.Printf("Error! Key length = %d\n", len(key))
+	}
+
 	sBlock := make([]byte, 64)
 	copy(sBlock[0:4],   diagonal[0:4])
 	copy(sBlock[4:8],   key[0:4])
@@ -16,8 +25,8 @@ func salsaBlock(key, nonce []byte) []byte {
 	copy(sBlock[24:28], nonce[0:4])
 	copy(sBlock[28:32], nonce[4:8])
 
-	// copy(sBlock[32:36], counter[0:4])
-	// copy(sBlock[36:40], counter[4:8])
+	copy(sBlock[32:36], nonce[8:12])
+	copy(sBlock[36:40], nonce[12:16])
 	copy(sBlock[40:44], diagonal[8:12])
 	copy(sBlock[44:48], key[16:20])
 
@@ -31,9 +40,6 @@ func salsaBlock(key, nonce []byte) []byte {
 
 func SalsaEncode(key, nonce, msg []byte) []byte {
 	out := []byte{}
-	hash := MakeSHA256()
-	key = hash.Hash(key)
-fmt.Println(ParseToBase64(key))
 
 	n := len(msg)
 	// need to pad msg to multiple of 64
@@ -42,15 +48,9 @@ fmt.Println(ParseToBase64(key))
 	msg = append(msg, pad...)
 
 	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
-
-	sBlock := salsaBlock(key, nonce)
-	// set counter
-	copy(sBlock[32:36], counter[0:4])
-	copy(sBlock[36:40], counter[4:8])
-
 	for i := 0; i < len(msg); i += 64 {
-		copy(sBlock[32:36], counter[0:4])
-		copy(sBlock[36:40], counter[4:8])
+		nonceCounter := append(nonce, counter...)
+		sBlock := salsaBlock(key, nonceCounter)
 
 		intBlock, _ := BytesToIntSlice(sBlock, false) // this consists four uint32s
 		eBlock := salsaFunction(intBlock)
@@ -62,6 +62,12 @@ fmt.Println(ParseToBase64(key))
 	}
 
 	return out[:n]
+}
+
+func SalsaDecode(key, nonce, msg []byte) ([]byte, error) {
+	out := SalsaEncode(key, nonce, msg)
+
+	return out, nil
 }
 
 func salsaFunction(in []uint32) (out []uint32) {
@@ -238,15 +244,28 @@ func TestSalsa() {
 	fmt.Printf("%08x\n", expected)
 	fmt.Println()
 
-	salsaBytes := []byte{211, 159, 13, 115, 76, 55, 82, 183, 3, 117, 222, 37, 191, 187, 234, 136,
-	                     49, 237, 179, 48, 1, 106, 178, 219, 175, 199, 166, 48, 86, 16, 179, 207,
-	                     31, 240, 32, 63, 15, 83, 93, 161, 116, 147, 48, 113, 238, 55, 204, 36,
-	                     79, 201, 235, 79, 3, 81, 156, 47, 203, 26, 244, 243, 88, 118, 104, 54}
-	salsaInts, _ := BytesToIntSlice(salsaBytes, false)
-	salsaInts = salsaFunction(salsaInts)
-	salsaBytes = intSliceToBytes(salsaInts, false)
+	sKey := []byte{  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+                   201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216}
+	sNonce := []byte{101, 102, 103, 104, 105, 106, 107, 108,
+	                 109, 110, 111, 112, 113, 114, 115, 116}
+	sBlock := salsaBlock(sKey, sNonce)
+fmt.Printf("%d\n", sBlock)
 
-	fmt.Printf("%d\n", salsaBytes)
+	intBlock, _ := BytesToIntSlice(sBlock, false) // this consists four uint32s
+	eBlock := salsaFunction(intBlock)
+	byteBlock := intSliceToBytes(eBlock, false)
+fmt.Printf("%d\n", byteBlock)
+
+	sKey = []byte{  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16 }
+	sBlock = salsaBlock(sKey, sNonce)
+fmt.Printf("%d\n", sBlock)
+
+	intBlock, _ = BytesToIntSlice(sBlock, false) // this consists four uint32s
+	eBlock = salsaFunction(intBlock)
+	byteBlock = intSliceToBytes(eBlock, false)
+fmt.Printf("%d\n", byteBlock)
+
+	// fmt.Printf("%d\n", XORdBlocks)
 	// fmt.Printf("%08x\n", expected)
 	fmt.Println()
 }
