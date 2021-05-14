@@ -159,7 +159,7 @@ func qrChaCha(x []uint32, a,b,c,d int) {
 	x[a] += x[b]
 	x[d] = LeftRotate(x[d] ^ x[a], 16)
 	x[c] += x[d]
-	x[b] = LeftRotate(x[b] ^ x[c], 13)
+	x[b] = LeftRotate(x[b] ^ x[c], 12)
 	x[a] += x[b]
 	x[d] = LeftRotate(x[d] ^ x[a],  8)
 	x[c] += x[d]
@@ -363,3 +363,47 @@ fmt.Printf("%d\n", byteBlock)
 	fmt.Println()
 }
 
+func TestChaCha() {
+	key := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	              0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	              0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	              0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f}
+	nonce := []byte{0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x4a,
+	                0x00, 0x00, 0x00, 0x00}
+	ctr := []byte{0x01, 0x00, 0x00, 0x00}
+	nonceCounter := append(ctr, nonce...)
+	sBlock := chaChaBlock(key, nonceCounter)
+	intBlock, _ := BytesToIntSlice(sBlock, false)
+	// fmt.Printf("%08x", intBlock)
+	for i, v := range intBlock {
+		fmt.Printf("%08x", v)
+		if i % 4 == 3 {
+			fmt.Printf("\n")
+		} else {
+			fmt.Printf(" ")
+		}		
+	}
+fmt.Printf("\n")
+	intBlock = chaChaFunction(intBlock)
+	for i, v := range intBlock {
+		fmt.Printf("%08x", v)
+		if i % 4 == 3 {
+			fmt.Printf("\n")
+		} else {
+			fmt.Printf(" ")
+		}		
+	}
+
+
+// 	for i := 0; i < len(sBlock); i += 4 {
+// // fmt.Printf("[%d, %d]\n", i,(i+4))
+// 		fmt.Printf("%08x", sBlock[i:(i+4)])
+// 		if i % 16 == 12 {
+// 			fmt.Printf("\n")
+// 		} else {
+// 			fmt.Printf(" ")
+// 		}
+// 	}
+
+	return
+}
