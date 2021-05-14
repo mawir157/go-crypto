@@ -52,7 +52,7 @@ func SalsaEncode(key, nonce, msg []byte) []byte {
 		nonceCounter := append(nonce, counter...)
 		sBlock := salsaBlock(key, nonceCounter)
 
-		intBlock, _ := BytesToIntSlice(sBlock, false) // this consists four uint32s
+		intBlock, _ := BytesToIntSlice(sBlock, false)
 		eBlock := salsaFunction(intBlock)
 		byteBlock := intSliceToBytes(eBlock, false)
 
@@ -125,7 +125,7 @@ func chaChaBlock(key, nonce []byte) []byte {
 	copy(sBlock[48:64], nonce)
 
 	return sBlock
-} 
+}
 
 func chaChaFunction(in []uint32) (out []uint32) {
 	out = make([]uint32, len(in))
@@ -177,12 +177,12 @@ func ChaChaEncode(key, nonce, msg []byte) []byte {
 	pad := make([]byte, diff)
 	msg = append(msg, pad...)
 
-	counter := []byte{0x00,0x00,0x00,0x00}
+	counter := []byte{0x00, 0x00, 0x00, 0x00}
 	for i := 0; i < len(msg); i += 64 {
 		nonceCounter := append(counter, nonce...)
 		sBlock := chaChaBlock(key, nonceCounter)
 
-		intBlock, _ := BytesToIntSlice(sBlock, false) // this consists four uint32s
+		intBlock, _ := BytesToIntSlice(sBlock, false)
 		eBlock := chaChaFunction(intBlock)
 		byteBlock := intSliceToBytes(eBlock, false)
 

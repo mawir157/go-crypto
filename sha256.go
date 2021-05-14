@@ -1,8 +1,5 @@
 package jmtcrypto
 
-// import "jmtcrypto/utils"
-// import "errors"
-
 type SHA256 struct {
 	sizeBits int
 }
@@ -43,7 +40,7 @@ func (hC SHA256) Hash(data []byte) []byte {
 		L = append(L, 0x00)
 	}
 
-	L = append(L, IntTo8Bytes(8*len(data))...)
+	L = append(L, IntTo8Bytes(8*len(data), true)...)
 	// at this point L should be a multiple of 64 bytes..
 	// .. so we can step through it in chunks of 64
 	for i := 0; i < len(L); i += 64 {
@@ -105,46 +102,3 @@ func (hC SHA256) Hash(data []byte) []byte {
 
 	return hashed[:]
 }
-
-
-// func RightRotate(i uint32, n int) uint32 {
-// 	top := (i << (32 - n))
-// 	bottom := (i >> n)
-
-// 	return top + bottom
-// }
-
-// func IntTo4Bytes(l uint32) []byte {
-// 	bytes := []byte{0x00, 0x00, 0x00, 0x00}
-// 	for i := 0; i < 4; i++ {
-// 		q := byte(l & 0xff)
-// 		bytes[3 - i] = q
-// 		l >>= 8
-// 	}
-
-// 	return bytes
-// }
-
-// func IntTo8Bytes(l int) []byte {
-// 	bytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-// 	for i := 0; i < 8; i++ {
-// 		q := byte(l & 0xff)
-// 		bytes[7 - i] = q
-// 		l >>= 8
-// 	}
-
-// 	return bytes
-// }
-
-// func BytesToInt(arr []byte) (uint32, error) {
-// 	if len(arr) != 4 {
-// 		return 0, errors.New("Not 4 bytes")
-// 	}
-// 	value := uint32(0)
-// 	for _, v := range arr {
-// 		value <<= 8
-// 		value += uint32(v)
-// 	}
-
-// 	return value, nil
-// }

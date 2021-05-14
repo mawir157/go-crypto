@@ -2,7 +2,6 @@ package jmtcrypto
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -202,7 +201,7 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	msg2 := append(msg, bc.getKey()...)
 	h := hash.Hash(msg2)
 
-	msg3 := bytePad(append(msg, h...))
+	msg3 := addBytePad(append(msg, h...))
 
 	cipherText := []byte{}
 	switch mode {
@@ -251,11 +250,10 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if err != nil {
 		wait(start)
-		fmt.Println(out)
 		return out, errors.New("Cannot Authenticate")
 	}
 
-	out, err = removePad(out)
+	out, err = removeBytePad(out)
 	if err != nil {
 		wait(start)
 		return out, errors.New("Cannot Authenticate")

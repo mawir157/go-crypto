@@ -1,9 +1,5 @@
 package jmtcrypto
 
-import (
-	// "fmt"
-)
-
 type CipherMode int
 const (
 	ECB    CipherMode = iota

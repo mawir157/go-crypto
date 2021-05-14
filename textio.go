@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/base64"
 	"errors"
-	// "strconv"
 	"strings"
 )
 
@@ -108,7 +107,7 @@ func WordsToBytes(ws []Word) (data []byte) {
 	return
 }
 
-func bytePad(bs []byte) []byte {
+func addBytePad(bs []byte) []byte {
 	padValue := byte(16 -(len(bs) % 16))
 
 	for i := byte(0); i < padValue; i++ {
@@ -118,7 +117,7 @@ func bytePad(bs []byte) []byte {
 	return bs
 }
 
-func removePad(bs []byte) ([]byte, error) {
+func removeBytePad(bs []byte) ([]byte, error) {
 	err := ValidatePad(bs)
 
 	if err != nil {

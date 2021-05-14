@@ -25,11 +25,15 @@ func IntTo4Bytes(l uint32, be bool) []byte {
 	return bytes
 }
 
-func IntTo8Bytes(l int) []byte {
+func IntTo8Bytes(l int, be bool) []byte {
 	bytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	for i := 0; i < 8; i++ {
 		q := byte(l & 0xff)
-		bytes[7 - i] = q
+		if be {
+			bytes[7 - i] = q
+		} else {
+			bytes[i] = q
+		}
 		l >>= 8
 	}
 
@@ -60,7 +64,10 @@ func BytesToInt(arr []byte, be bool) (uint32, error) {
 func BytesToIntSlice(arr []byte, be bool) ([]uint32, error) {
 	out := []uint32{}
 	for i := 0; i < len(arr); i +=4 {
-		b, _ := BytesToInt(arr[i:i+4], be)
+		b, err := BytesToInt(arr[i:i+4], be)
+		if err != nil {
+			return out, err
+		}
 		out = append(out, b)
 	}
 
