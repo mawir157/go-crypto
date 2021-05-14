@@ -4,11 +4,13 @@ import (
 	"time"
 )
 
+// PRNG - 
 type PRNG interface {
 	Seed(seed int)
 	Next() int
 }
 
+// PRNGStreamEncode -
 func PRNGStreamEncode(seed int, prng PRNG, msg []byte) (int, []byte) {
 	if seed <= 0 {
  		seed = int(time.Now().UnixNano())
@@ -33,6 +35,7 @@ func PRNGStreamEncode(seed int, prng PRNG, msg []byte) (int, []byte) {
 	return seed, out
 }
 
+// PRNGStreamDecode - 
 func PRNGStreamDecode(seed int, prng PRNG, msg []byte) ([]byte) {
 	_, out := PRNGStreamEncode(seed, prng, msg)
 
@@ -40,6 +43,7 @@ func PRNGStreamDecode(seed int, prng PRNG, msg []byte) ([]byte) {
 }
 
 
+// Pretty sure this is redundant (intbyteconversions.go!)
 func intToBytes(i int) [4]byte {
 	var bs = [4]byte{}
 

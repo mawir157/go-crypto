@@ -1,14 +1,18 @@
 package jmtcrypto
 
 // A block cipher that does nothing!
+
+// NULLCode - 
 type NULLCode struct {
 	key []byte
 }
 
+// MakeNULL - 
 func MakeNULL(key []byte) NULLCode {
 	return NULLCode{key:key}
 }
 
+// BlockSize - 
 func (code NULLCode) BlockSize() int {
 	return 16
 }

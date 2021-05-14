@@ -4,18 +4,20 @@ import (
 	"time"
 )
 
+// PermConGen - 
 type PermConGen struct {
 	state      uint64
 	multiplier uint64
 	increment  uint64
 }
 
+// PCGInit -
 func PCGInit() *PermConGen {
 	return &PermConGen{multiplier: 6364136223846793005,
-	                   increment:  1442695040888963407,
-	                  }
+	                   increment:  1442695040888963407}
 }
 
+// Seed - 
 func (rng *PermConGen) Seed(seed int) {
 	if seed == 0 {
 		seed = int(time.Now().UnixNano())
@@ -24,6 +26,7 @@ func (rng *PermConGen) Seed(seed int) {
 	rng.state = uint64(seed) + rng.increment
 }
 
+// Next - 
 func (rng *PermConGen) Next() int {
 		x := rng.state
 		count := uint(x >> 59)

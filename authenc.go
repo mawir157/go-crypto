@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// HashFunction - 
 type HashFunction interface {
 	Hash(data []byte) []byte
 	Size()            int
@@ -34,10 +35,7 @@ func wait(start time.Time) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Encrypt-then-MAC
-//
+// EtMEncrypt - 
 func EtMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	            mode CipherMode, key2 []byte, extra map[string]([]byte)) []byte {
 
@@ -67,6 +65,7 @@ func EtMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	return out
 }
 
+// EtMDecrypt - 
 func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
                 mode CipherMode, key2 []byte, extra map[string]([]byte)) ([]byte, error) {
 	start := time.Now()
@@ -84,7 +83,7 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if !compareBytes(h1, h2) {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")	
+		return out, errors.New("cannot Authenticate")	
 	}
 
 	switch mode {
@@ -106,17 +105,14 @@ func EtMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if err != nil {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")		
+		return out, errors.New("cannot Authenticate")		
 	}
 
 	wait(start)
 	return out, nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Encrypt-and-MAC
-//
+// EaMEncrypt - 
 func EaMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	            mode CipherMode,  extra map[string]([]byte)) []byte {
 
@@ -146,6 +142,7 @@ func EaMEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	return out
 }
 
+// EaMDecrypt - 
 func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
                 mode CipherMode, extra map[string]([]byte)) ([]byte, error) {
 	start := time.Now()
@@ -179,22 +176,19 @@ func EaMDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if !compareBytes(h1, h2) {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")	
+		return out, errors.New("cannot Authenticate")	
 	}
 
 	if err != nil {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")		
+		return out, errors.New("cannot Authenticate")		
 	}
 
 	wait(start)
 	return out, nil
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// MAC-then-Encrypt
-//
+// MtEEncrypt -
 func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	            mode CipherMode, extra map[string]([]byte)) []byte {
 
@@ -224,6 +218,7 @@ func MtEEncrypt(msg []byte, bc BlockCipher, hash HashFunction,
 	return cipherText
 }
 
+// MtEDecrypt - 
 func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
                 mode CipherMode, extra map[string]([]byte)) ([]byte, error) {
 	start := time.Now()
@@ -250,13 +245,13 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if err != nil {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")
+		return out, errors.New("cannot Authenticate")
 	}
 
 	out, err = removeBytePad(out)
 	if err != nil {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")
+		return out, errors.New("cannot Authenticate")
 	}
 
 	h1 := make([]byte, hash.Size())
@@ -269,7 +264,7 @@ func MtEDecrypt(msg []byte, bc BlockCipher, hash HashFunction,
 
 	if !compareBytes(h1, h2) {
 		wait(start)
-		return out, errors.New("Cannot Authenticate")
+		return out, errors.New("cannot Authenticate")
 	}
 
 	wait(start)

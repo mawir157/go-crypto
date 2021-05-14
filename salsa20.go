@@ -6,10 +6,10 @@ func salsaBlock(key, nonce []byte) []byte {
 	diagonal := []byte{}
 	if len(key) == 32 {
 		// do nothing
-		diagonal, _ = ParseFromAscii("expand 32-byte k", false)
+		diagonal, _ = ParseFromASCII("expand 32-byte k", false)
 	} else if len(key) == 16 {
 		key = append(key, key...)
-		 diagonal, _ = ParseFromAscii("expand 16-byte k", false)
+		 diagonal, _ = ParseFromASCII("expand 16-byte k", false)
 	} else {
 		fmt.Printf("Error! Key length = %d\n", len(key))
 	}
@@ -38,6 +38,7 @@ func salsaBlock(key, nonce []byte) []byte {
 	return sBlock
 }
 
+// SalsaEncode - 
 func SalsaEncode(key, nonce, msg []byte) []byte {
 	out := []byte{}
 
@@ -52,7 +53,7 @@ func SalsaEncode(key, nonce, msg []byte) []byte {
 		nonceCounter := append(nonce, counter...)
 		sBlock := salsaBlock(key, nonceCounter)
 
-		intBlock, _ := BytesToIntSlice(sBlock, false)
+		intBlock, _ := bytesToIntSlice(sBlock, false)
 		eBlock := salsaFunction(intBlock)
 		byteBlock := intSliceToBytes(eBlock, false)
 
@@ -64,6 +65,7 @@ func SalsaEncode(key, nonce, msg []byte) []byte {
 	return out[:n]
 }
 
+// SalsaDecode - 
 func SalsaDecode(key, nonce, msg []byte) ([]byte, error) {
 	out := SalsaEncode(key, nonce, msg)
 
@@ -99,22 +101,20 @@ func salsaFunction(in []uint32) (out []uint32) {
 }
 
 func qr(x []uint32, a,b,c,d int) {
-	x[b] = x[b] ^ LeftRotate(x[a] + x[d],  7)
-	x[c] = x[c] ^ LeftRotate(x[b] + x[a],  9)
-	x[d] = x[d] ^ LeftRotate(x[c] + x[b], 13)
-	x[a] = x[a] ^ LeftRotate(x[d] + x[c], 18)
-
-	return
+	x[b] = x[b] ^ leftRotate(x[a] + x[d],  7)
+	x[c] = x[c] ^ leftRotate(x[b] + x[a],  9)
+	x[d] = x[d] ^ leftRotate(x[c] + x[b], 13)
+	x[a] = x[a] ^ leftRotate(x[d] + x[c], 18)
 }
 
 func chaChaBlock(key, nonce []byte) []byte {
 	diagonal := []byte{}
 	if len(key) == 32 {
 		// do nothing
-		diagonal, _ = ParseFromAscii("expand 32-byte k", false)
+		diagonal, _ = ParseFromASCII("expand 32-byte k", false)
 	} else if len(key) == 16 {
 		key = append(key, key...)
-		 diagonal, _ = ParseFromAscii("expand 16-byte k", false)
+		 diagonal, _ = ParseFromASCII("expand 16-byte k", false)
 	} else {
 		fmt.Printf("Error! Key length = %d\n", len(key))
 	}
@@ -157,17 +157,16 @@ func chaChaFunction(in []uint32) (out []uint32) {
 
 func qrChaCha(x []uint32, a,b,c,d int) {
 	x[a] += x[b]
-	x[d] = LeftRotate(x[d] ^ x[a], 16)
+	x[d] = leftRotate(x[d] ^ x[a], 16)
 	x[c] += x[d]
-	x[b] = LeftRotate(x[b] ^ x[c], 12)
+	x[b] = leftRotate(x[b] ^ x[c], 12)
 	x[a] += x[b]
-	x[d] = LeftRotate(x[d] ^ x[a],  8)
+	x[d] = leftRotate(x[d] ^ x[a],  8)
 	x[c] += x[d]
-	x[b] = LeftRotate(x[b] ^ x[c],  7)
-
-	return
+	x[b] = leftRotate(x[b] ^ x[c],  7)
 }
 
+// ChaChaEncode - 
 func ChaChaEncode(key, nonce, msg []byte) []byte {
 	out := []byte{}
 
@@ -182,7 +181,7 @@ func ChaChaEncode(key, nonce, msg []byte) []byte {
 		nonceCounter := append(counter, nonce...)
 		sBlock := chaChaBlock(key, nonceCounter)
 
-		intBlock, _ := BytesToIntSlice(sBlock, false)
+		intBlock, _ := bytesToIntSlice(sBlock, false)
 		eBlock := chaChaFunction(intBlock)
 		byteBlock := intSliceToBytes(eBlock, false)
 
@@ -194,12 +193,14 @@ func ChaChaEncode(key, nonce, msg []byte) []byte {
 	return out[:n]
 }
 
+// ChaChaDecode - 
 func ChaChaDecode(key, nonce, msg []byte) ([]byte, error) {
 	out := ChaChaEncode(key, nonce, msg)
 
 	return out, nil
 }
 
+// TestSalsa - 
 func TestSalsa() {
 	// test quarter round
 	testVector := []uint32{0x00000000, 0x00000000, 0x00000000, 0x00000000}
@@ -344,7 +345,7 @@ func TestSalsa() {
 	sBlock := salsaBlock(sKey, sNonce)
 fmt.Printf("%d\n", sBlock)
 
-	intBlock, _ := BytesToIntSlice(sBlock, false) // this consists four uint32s
+	intBlock, _ := bytesToIntSlice(sBlock, false) // this consists four uint32s
 	eBlock := salsaFunction(intBlock)
 	byteBlock := intSliceToBytes(eBlock, false)
 fmt.Printf("%d\n", byteBlock)
@@ -353,7 +354,7 @@ fmt.Printf("%d\n", byteBlock)
 	sBlock = salsaBlock(sKey, sNonce)
 fmt.Printf("%d\n", sBlock)
 
-	intBlock, _ = BytesToIntSlice(sBlock, false) // this consists four uint32s
+	intBlock, _ = bytesToIntSlice(sBlock, false) // this consists four uint32s
 	eBlock = salsaFunction(intBlock)
 	byteBlock = intSliceToBytes(eBlock, false)
 fmt.Printf("%d\n", byteBlock)
@@ -363,6 +364,7 @@ fmt.Printf("%d\n", byteBlock)
 	fmt.Println()
 }
 
+// TestChaCha - 
 func TestChaCha() {
 	key := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	              0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -373,7 +375,7 @@ func TestChaCha() {
 	ctr := []byte{0x01, 0x00, 0x00, 0x00}
 	nonceCounter := append(ctr, nonce...)
 	sBlock := chaChaBlock(key, nonceCounter)
-	intBlock, _ := BytesToIntSlice(sBlock, false)
+	intBlock, _ := bytesToIntSlice(sBlock, false)
 	// fmt.Printf("%08x", intBlock)
 	for i, v := range intBlock {
 		fmt.Printf("%08x", v)
@@ -393,17 +395,4 @@ fmt.Printf("\n")
 			fmt.Printf(" ")
 		}		
 	}
-
-
-// 	for i := 0; i < len(sBlock); i += 4 {
-// // fmt.Printf("[%d, %d]\n", i,(i+4))
-// 		fmt.Printf("%08x", sBlock[i:(i+4)])
-// 		if i % 16 == 12 {
-// 			fmt.Printf("\n")
-// 		} else {
-// 			fmt.Printf(" ")
-// 		}
-// 	}
-
-	return
 }

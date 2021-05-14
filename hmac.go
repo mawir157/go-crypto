@@ -1,5 +1,6 @@
 package jmtcrypto
 
+// HMAC - 
 func HMAC(key []byte, msg []byte, hash HashFunction) []byte {
 	b := 2*hash.Size() // fix this inner vs outerblock size
 	if len(key) > b {

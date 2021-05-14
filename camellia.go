@@ -5,7 +5,7 @@ import (
 	// "math/rand"
 )
 
-var CamSBox =
+var camSBox =
 [256]byte{112, 130,  44, 236, 179,  39, 192, 229, 228, 133,  87,  53, 234,  12, 174,  65,
 					 35, 239, 107, 147,  69,  25, 165,  33, 237,  14,  79,  78,  29, 101, 146, 189,
 					134, 184, 175, 143, 124, 235,  31, 206,  62,  48, 220,  95,  94, 197,  11,  26,
@@ -34,16 +34,18 @@ var sigma6 = uint64(0xB05688C2B3E6C1FD)
 
 type uint128 [2]uint64
 
-
+// CamelliaCode - 
 type CamelliaCode struct {
 	// numberOfRounds  int
 	key             []byte
 }
 
+// MakeCamellia - 
 func MakeCamellia(key []byte) CamelliaCode {
 	return CamelliaCode{key:key}
 }
 
+// BlockSize - 
 func (code CamelliaCode) BlockSize() int {
 	return 16 // 16 bytes = 128 bits
 }
@@ -188,7 +190,7 @@ func rotate(p uint128, n int) (k uint128) {
 
 func convert(arr []byte) (uint64, error) {
 	if len(arr) != 8 {
-		return 0, errors.New("Not 8 bytes")
+		return 0, errors.New("not 8 bytes")
 	}
 	value := uint64(0)
 	for _, v := range arr {
@@ -210,19 +212,11 @@ func devert(v uint64) ([]byte) {
 	return arr
 }
 
-func xor8(a, b [8]byte) (c [8]byte) {
-	for i := 0; i < 8; i++ {
-		c[i] = a[i] ^ b[i]
-	}
-
-	return
-}
-
-func f(f_in, ke uint64) (f_out uint64) {
+func f(fIn, ke uint64) (fOut uint64) {
 	var x uint64
 	var t1, t2, t3, t4, t5, t6, t7, t8  byte
 	var y1, y2, y3, y4, y5, y6, y7, y8  byte
-	x  = f_in ^ ke
+	x  = fIn ^ ke
 	t1 = byte(x >> 56)
 	t2 = byte(x >> 48)
 	t3 = byte(x >> 40)
@@ -231,14 +225,14 @@ func f(f_in, ke uint64) (f_out uint64) {
 	t6 = byte(x >> 16)
 	t7 = byte(x >>  8)
 	t8 = byte(x >>  0)
-	t1 = CamSBox[t1]
-	t2 = CamSBox[t2]
-	t3 = CamSBox[t3]
-	t4 = CamSBox[t4]
-	t5 = CamSBox[t5]
-	t6 = CamSBox[t6]
-	t7 = CamSBox[t7]
-	t8 = CamSBox[t8]
+	t1 = camSBox[t1]
+	t2 = camSBox[t2]
+	t3 = camSBox[t3]
+	t4 = camSBox[t4]
+	t5 = camSBox[t5]
+	t6 = camSBox[t6]
+	t7 = camSBox[t7]
+	t8 = camSBox[t8]
 	y1 = t1 ^ t3 ^ t4 ^ t6 ^ t7 ^ t8;
 	y2 = t1 ^ t2 ^ t4 ^ t5 ^ t7 ^ t8;
 	y3 = t1 ^ t2 ^ t3 ^ t5 ^ t6 ^ t8;
@@ -248,18 +242,18 @@ func f(f_in, ke uint64) (f_out uint64) {
 	y7 = t3 ^ t4 ^ t5 ^ t6 ^ t8;
 	y8 = t1 ^ t4 ^ t5 ^ t6 ^ t7;
 
-	f_out = (uint64(y1) << 56) | (uint64(y2) << 48) | (uint64(y3) << 40) |
+	fOut = (uint64(y1) << 56) | (uint64(y2) << 48) | (uint64(y3) << 40) |
 	        (uint64(y4) << 32) | (uint64(y5) << 24) | (uint64(y6) << 16) |
 	        (uint64(y7) <<  8) | uint64(y8);
-	return f_out;
+	return fOut;
 }
 
-func fl(fl_in, ke uint64) uint64 {
+func fl(flIn, ke uint64) uint64 {
 	var x1, x2 uint32
 	var k1, k2 uint32
 
-	x1 = uint32(fl_in >> 32)
-	x2 = uint32(fl_in)
+	x1 = uint32(flIn >> 32)
+	x2 = uint32(flIn)
 
 	k1 = uint32(ke >> 32)
 	k2 = uint32(ke)
@@ -270,12 +264,12 @@ func fl(fl_in, ke uint64) uint64 {
 	return (uint64(x1) << 32) + uint64(x2)
 }
 
-func flinv(flinv_in, ke uint64) uint64 {
+func flinv(flInvIn, ke uint64) uint64 {
 	var y1, y2 uint32
 	var k1, k2 uint32
 
-	y1 = uint32(flinv_in >> 32)
-	y2 = uint32(flinv_in)
+	y1 = uint32(flInvIn >> 32)
+	y2 = uint32(flInvIn)
 
 	k1 = uint32(ke >> 32)
 	k2 = uint32(ke)
@@ -289,9 +283,6 @@ func flinv(flinv_in, ke uint64) uint64 {
 func (code CamelliaCode) blockEncrypt(w []byte) ([]byte) {
 	n := 8 * len(code.key)
 
-	if len(w) != 16 {
-		// throw error!
-	}
 	d1, _ := convert(w[:8]) 
 	d2, _ := convert(w[8:])
 
@@ -347,9 +338,6 @@ func (code CamelliaCode) blockEncrypt(w []byte) ([]byte) {
 func (code CamelliaCode) blockDecrypt(w []byte) ([]byte) {
 	n := 8 * len(code.key)
 
-	if len(w) != 16 {
-		// throw error!
-	}
 	d1, _ := convert(w[:8]) 
 	d2, _ := convert(w[8:])
 

@@ -11,7 +11,9 @@ import (
 //
 // Convert to and from bytes
 //
-func ParseFromAscii(str string, pad bool) ([]byte, error) {
+
+// ParseFromASCII - 
+func ParseFromASCII(str string, pad bool) ([]byte, error) {
 	msg := make([]byte, 0)
 	for _, char := range str {
 		msg = append(msg, byte(char))
@@ -26,7 +28,8 @@ func ParseFromAscii(str string, pad bool) ([]byte, error) {
 	return msg, nil
 }
 
-func ParseToAscii(bs []byte, pad bool) (string, error) {
+// ParseToASCII -
+func ParseToASCII(bs []byte, pad bool) (string, error) {
 	var sb strings.Builder
 
 	if pad {
@@ -41,11 +44,12 @@ func ParseToAscii(bs []byte, pad bool) (string, error) {
 	return sb.String(), nil
 }
 
+// ParseFromHex -
 func ParseFromHex(s string, pad bool) ([]byte, error) {
 	data, err := hex.DecodeString(s)
 	if err != nil {
 		// panic(err)
-		return []byte{}, errors.New("Invalid Hex string")
+		return []byte{}, errors.New("invalid hex string")
 	}
 
 	if pad {
@@ -58,15 +62,17 @@ func ParseFromHex(s string, pad bool) ([]byte, error) {
 	return data, nil
 }
 
+// ParseToHex - 
 func ParseToHex(bts []byte) (string, error) {
 	return hex.EncodeToString(bts), nil
 }
 
+// ParseFromBase64 -
 func ParseFromBase64(s string, pad bool) ([]byte, error) {
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		// panic(err)
-		return []byte{}, errors.New("Invalid Base64 string")
+		return []byte{}, errors.New("invalid base64 string")
 	}
 
 	if pad {
@@ -79,11 +85,12 @@ func ParseFromBase64(s string, pad bool) ([]byte, error) {
 	return data, nil
 }
 
+// ParseToBase64 - 
 func ParseToBase64(bts []byte) (string, error) {
 	return base64.StdEncoding.EncodeToString(bts), nil
 }
 
-func BytesToWords(data []byte, pad bool) (parsed []Word) {
+func bytesToWords(data []byte, pad bool) (parsed []Word) {
 	if pad {
 		padValue := byte(16 -(len(data) % 16))
 
@@ -99,7 +106,7 @@ func BytesToWords(data []byte, pad bool) (parsed []Word) {
 	return parsed
 }
 
-func WordsToBytes(ws []Word) (data []byte) {
+func wordsToBytes(ws []Word) (data []byte) {
 	for _ , w := range ws {
 		data = append(data, w[:]...)
 	}
@@ -118,7 +125,7 @@ func addBytePad(bs []byte) []byte {
 }
 
 func removeBytePad(bs []byte) ([]byte, error) {
-	err := ValidatePad(bs)
+	err := validatePad(bs)
 
 	if err != nil {
 		return bs, err
@@ -129,27 +136,27 @@ func removeBytePad(bs []byte) ([]byte, error) {
 }
 
 // The Error messages are intentially vague to prevent leaking information!
-func ValidatePad(bs []byte) (error) {
+func validatePad(bs []byte) (error) {
 	final := bs[len(bs) - 1]
 	if len(bs) % 16 != 0 {
-		return errors.New("Invalid Pad")
+		return errors.New("invalid pad")
 	}
 
 	if int(final) > len(bs) {
-		return errors.New("Invalid Pad")
+		return errors.New("invalid pad")
 	}
 
 	if final == 0x00 {
-		return errors.New("Invalid Pad")
+		return errors.New("invalid pad")
 	}
 
 	if final > 0x10 {
-		return errors.New("Invalid Pad")
+		return errors.New("invalid pad")
 	}
 
 	for b := 0; b < int(final); b++ {
 		if bs[len(bs) - 1 - b] != final {
-			return errors.New("Invalid Pad")
+			return errors.New("invalid pad")
 		}
 	}
 	return nil

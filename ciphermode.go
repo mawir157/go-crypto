@@ -1,16 +1,25 @@
 package jmtcrypto
 
+// CipherMode - 
 type CipherMode int
 const (
+	// ECB -
 	ECB    CipherMode = iota
+	// CBC -
 	CBC
+	// PCB -
 	PCB
+	// OFB -
 	OFB
+	// CTR - 
 	CTR
+	// CFB -
 	CFB
+	// PRNGSTREAM - 
 	PRNGSTREAM
 )
 
+// BlockCipher - 
 type BlockCipher interface {
 	blockEncrypt(plaintext []byte) []byte
 	blockDecrypt(cipherText []byte) []byte
@@ -31,6 +40,8 @@ func byteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
 //
 // Electronic Codebook (ECB)
 //
+
+// ECBEncrypt - Electronic Codebook (ECB)
 func ECBEncrypt(bc BlockCipher, msg []byte) ([]byte) {
 	out := []byte{}
 
@@ -42,6 +53,7 @@ func ECBEncrypt(bc BlockCipher, msg []byte) ([]byte) {
 	return out
 }
 
+// ECBDecrypt - Electronic Codebook (ECB)
 func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -50,7 +62,7 @@ func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
 		out = append(out, eBlock...)
 	}
 
-	err := ValidatePad(out)
+	err := validatePad(out)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +74,8 @@ func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
 //
 // Cipher block chaining (CBC)
 //
+
+// CBCEncrypt -
 func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	out := []byte{}
 
@@ -77,6 +91,7 @@ func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
+// CBCDecrypt - 
 func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -89,7 +104,7 @@ func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 		iv = msg[i:i+bc.BlockSize()]
 	}
 
-	err := ValidatePad(out)
+	err := validatePad(out)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +115,8 @@ func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 //
 // Propagating cipher block chaining (PCBC)
 //
+
+// PCBCEncrypt - 
 func PCBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	out := []byte{}
 
@@ -115,6 +132,7 @@ func PCBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
+// PCBCDecrypt -
 func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -127,7 +145,7 @@ func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 		iv = byteStreamXOR(msg[i:i+bc.BlockSize()], block)
 	}
 
-	err := ValidatePad(out)
+	err := validatePad(out)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +157,8 @@ func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 //
 // Output feedback (OFB)
 //
+
+// OFBEncrypt -
 func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	out := []byte{}
 
@@ -154,6 +174,8 @@ func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
+
+// OFBDecrypt - 
 func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -166,7 +188,7 @@ func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 		out = append(out, eBlock...)
 	}
 
-	err := ValidatePad(out)
+	err := validatePad(out)
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +200,8 @@ func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 //
 // Cipher feedback (CFB)
 //
+
+// CFBEncrypt - 
 func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	out := []byte{}
 
@@ -194,6 +218,7 @@ func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
+// CFBDecrypt - 
 func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -207,7 +232,7 @@ func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 		out = append(out, eBlock...)
 	}
 
-	err := ValidatePad(out)
+	err := validatePad(out)
 	if err != nil {
 		return nil, err
 	}
@@ -219,6 +244,8 @@ func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 //
 // Counter (CTR)
 //
+
+// CTREncrypt - 
 func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 	out := []byte{}
@@ -243,6 +270,7 @@ func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 	return out[:msgLen]
 }
 
+// CTRDecrypt - 
 func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {
 	out := CTREncrypt(bc, nonce, msg)
 
@@ -252,10 +280,10 @@ func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {
 func incrementCTR(counter []byte) []byte {
 	pos := 0
 
-	counter[pos] += 1
+	counter[pos]++
 	for counter[pos] == 0 {
 		pos++
-		counter[pos] += 1
+		counter[pos]++
 
 		if pos > len(counter) {
 			pos = len(counter) - 1

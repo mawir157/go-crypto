@@ -89,7 +89,7 @@ func PrintBin(bs Bitset, newLine bool) {
 	}
 }
 
-func PrintAscii(b Bitset, newLine bool) {
+func PrintASCII(b Bitset, newLine bool) {
 	fmt.Print(DeparseMessage(b))
 	if newLine {
 		fmt.Println("")

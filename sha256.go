@@ -1,20 +1,24 @@
 package jmtcrypto
 
+// SHA256 - 
 type SHA256 struct {
 	sizeBits int
 }
 
+// MakeSHA256 - 
 func MakeSHA256() SHA256 {
 	return SHA256{sizeBits:256}
 }
 
+// Size - 
 func (hC SHA256) Size() int {
 	return (hC.sizeBits / 8)
 }
 
+// Hash - 
 func (hC SHA256) Hash(data []byte) []byte {
 	// Initialize the hash
-	h_arr := [8]uint32{0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+	hArr := [8]uint32{0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
 	                   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19}
 	// Initialize the array of round constants
 	k := [64]uint32{
@@ -40,38 +44,38 @@ func (hC SHA256) Hash(data []byte) []byte {
 		L = append(L, 0x00)
 	}
 
-	L = append(L, IntTo8Bytes(8*len(data), true)...)
+	L = append(L, intTo8Bytes(8*len(data), true)...)
 	// at this point L should be a multiple of 64 bytes..
 	// .. so we can step through it in chunks of 64
 	for i := 0; i < len(L); i += 64 {
 		chunk := L[i:(i+64)]
 		w := [64]uint32{}
 		for j := 0; j < 16; j++ {
-			w[j], _ = BytesToInt(chunk[4*j:4*(j+1)], true)
+			w[j], _ = bytesToInt(chunk[4*j:4*(j+1)], true)
 		}
 
 		for j := 16; j < 64; j++ {
-			s0 := RightRotate(w[j-15], 7) ^ RightRotate(w[j-15], 18) ^ (w[j-15] >> 3)
-			s1 := RightRotate(w[j-2], 17) ^ RightRotate(w[j-2],  19) ^ (w[j-2] >> 10)
+			s0 := rightRotate(w[j-15], 7) ^ rightRotate(w[j-15], 18) ^ (w[j-15] >> 3)
+			s1 := rightRotate(w[j-2], 17) ^ rightRotate(w[j-2],  19) ^ (w[j-2] >> 10)
 
 			w[j] = w[j-16] + s0 + w[j-7] + s1
 		}
 
 		// Initialize working variables to current hash value:
-		a := h_arr[0]
-		b := h_arr[1]
-		c := h_arr[2]
-		d := h_arr[3]
-		e := h_arr[4]
-		f := h_arr[5]
-		g := h_arr[6]
-		h := h_arr[7]
+		a := hArr[0]
+		b := hArr[1]
+		c := hArr[2]
+		d := hArr[3]
+		e := hArr[4]
+		f := hArr[5]
+		g := hArr[6]
+		h := hArr[7]
 
 		for j := 0; j < 64; j++ {
-			s1 := RightRotate(e, 6) ^ RightRotate(e, 11) ^ RightRotate(e, 25)
+			s1 := rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)
 			ch := (e & f) ^ ((^e) & g)
 			temp1 := h + s1 + ch + k[j] + w[j]
-			s0 := RightRotate(a, 2) ^ RightRotate(a, 13) ^ RightRotate(a, 22)
+			s0 := rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)
 			maj := (a & b) ^ (a & c) ^ (b & c)
 			temp2 := s0 + maj
 
@@ -86,18 +90,18 @@ func (hC SHA256) Hash(data []byte) []byte {
 		}
 
 		// Add the compressed chunk to the current hash value:
-		h_arr[0] += a
-		h_arr[1] += b
-		h_arr[2] += c
-		h_arr[3] += d
-		h_arr[4] += e
-		h_arr[5] += f
-		h_arr[6] += g
-		h_arr[7] += h	
+		hArr[0] += a
+		hArr[1] += b
+		hArr[2] += c
+		hArr[3] += d
+		hArr[4] += e
+		hArr[5] += f
+		hArr[6] += g
+		hArr[7] += h	
 	}
 	hashed := []byte{}
-	for _, i32 := range h_arr {
-		hashed = append(hashed, IntTo4Bytes(i32, true)...)
+	for _, i32 := range hArr {
+		hashed = append(hashed, intTo4Bytes(i32, true)...)
 	}
 
 	return hashed[:]

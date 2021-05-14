@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Mersenne19937 - 
 type Mersenne19937 struct {
 	w,n,m,r   int
 
@@ -13,6 +14,7 @@ type Mersenne19937 struct {
 	upperMask int
 }
 
+// Mersenne19937Init - 
 func Mersenne19937Init() *Mersenne19937 {
 	w, n, m, r := 32, 624, 397, 31
 
@@ -26,6 +28,7 @@ func Mersenne19937Init() *Mersenne19937 {
 	                      lowerMask:lowerMask, upperMask:upperMask}
 }
 
+// Seed - 
 func (rng *Mersenne19937) Seed(seed int) {
 	if seed <= 0 {
  		seed = int(time.Now().UnixNano())
@@ -40,6 +43,7 @@ func (rng *Mersenne19937) Seed(seed int) {
 	rng.index = 0
 }
 
+// Next - 
 func (rng *Mersenne19937) Next() int {
 	if rng.index >= rng.n {
 		rng.twist()
@@ -72,10 +76,9 @@ func (rng *Mersenne19937) twist() {
 	}
 
 	rng.index = 0
-
-	return
 }
 
+// Stream - 
 func (rng *Mersenne19937) Stream(n int) (out []int) {
 	out = make([]int, n)
 	for i := 0; i < n; i++ {
@@ -84,8 +87,9 @@ func (rng *Mersenne19937) Stream(n int) (out []int) {
 	}
 	return out
 }
-// write out the bits, it is obvious but tedious!
+// UnTwist - 
 func UnTwist(y int) int {
+	// write out the bits, it is obvious but tedious!
 	// UNDO y = y = y ^ (y >> 18)
 	y = y ^ (y >> 18)
 	// UNDO y = y ^ ((y << 15) & 0xEFC60000)
@@ -103,9 +107,8 @@ func UnTwist(y int) int {
 	return y
 }
 
+// Splice - 
 func (rng *Mersenne19937) Splice(arr []int) {
 	rng.MT = arr
 	rng.index = 0
-
-	return
 }

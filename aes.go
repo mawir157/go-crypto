@@ -1,9 +1,5 @@
 package jmtcrypto
 
-import (
-	"math/rand"
-)
-
 var sBox =
 [256]byte{0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
           0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -44,20 +40,10 @@ var sBoxInv =
 var rCons = [16]byte{0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
                      0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a}
 
+// Word is a block of 4 bytes
 type Word [4]byte // 32 bits
 
-func RandomBlock(n int) (key []Word) {
-	key = make([]Word, n)
-
-	for i := 0; i < len(key); i++ {
-		block := make([]byte, 4)
-		rand.Read(block)
-		copy(key[i][:], block)
-	}
-
-	return
-}
-
+// AESCode -
 type AESCode struct {
 	numberOfRounds  int
 	keyB            []byte // hack sort this out later
@@ -65,8 +51,9 @@ type AESCode struct {
 	keys            []Word
 }
 
+// MakeAES - 
 func MakeAES(key []byte) AESCode {
-	keyWords := BytesToWords(key, false)
+	keyWords := bytesToWords(key, false)
 
 	n := 0
 	if len(keyWords) == 4 {
@@ -77,9 +64,13 @@ func MakeAES(key []byte) AESCode {
 		n = 15
 	}
 
-	return AESCode{numberOfRounds:n, keyB:key, key:keyWords}
+	aes := AESCode{numberOfRounds:n, keyB:key, key:keyWords}
+	aes.keyExpansion()
+
+	return aes
 }
 
+// BlockSize - 
 func (code AESCode) BlockSize() int {
 	return 16
 }
@@ -88,7 +79,7 @@ func (code AESCode) getKey() []byte {
 	return code.keyB
 }
 
-func WordXOR(w1, w2 Word) (w3 Word) {
+func wordXOR(w1, w2 Word) (w3 Word) {
 	for i := 0; i < 4; i++ {
 		w3[i] = w1[i] ^ w2[i]
 	}
@@ -97,7 +88,7 @@ func WordXOR(w1, w2 Word) (w3 Word) {
 }
 
 // returns a block of 44, 52, 60 Words
-func (code AESCode) keyExpansion() (expanded []Word) {
+func (code *AESCode) keyExpansion() (expanded []Word) {
 	rc := Word{0, 0, 0, 0}
 
 	expanded = make([]Word, 4 * code.numberOfRounds)
@@ -111,15 +102,17 @@ func (code AESCode) keyExpansion() (expanded []Word) {
 
 		if (i % n == 0) {
 			rc[0] = rCons[i/n]
-			temp = WordXOR(code.subWord(code.rotWord(temp), true), rc)
+			temp = wordXOR(code.subWord(code.rotWord(temp), true), rc)
 		}
 
 		if (n == 8) && (i % n == 4) { // this can only ever be hit in 256 bit case
 			temp = code.subWord(temp, true)
 		}
 
-		expanded[i] = WordXOR(expanded[i - n], temp)
+		expanded[i] = wordXOR(expanded[i - n], temp)
 	}
+
+	code.keys = expanded
 
 	return
 }
@@ -209,22 +202,22 @@ func (code AESCode) shiftRow(ws [4]Word, encrypt bool) (new [4]Word) {
 }
 
 // we encrypt 4 words (128 bits at a time)
-func (code AESCode) blockEncrypt(bs_msg []byte) ([]byte) {
+func (code AESCode) blockEncrypt(msg []byte) ([]byte) {
 	// KeyExpansion – round keys are derived from the cipher key using the AES key
 	// schedule. AES requires a separate 128-bit round key block for each round
 	// plus one more.
-	keys := code.keyExpansion()
+	keys := code.keys
 
 	// convert 16 bytes into 4 words
 	var w [4]Word
-	msgW := BytesToWords(bs_msg, false)
+	msgW := bytesToWords(msg, false)
 	copy(w[:], msgW[:])
 
 	// Initial round key addition:
 		// AddRoundKey – each byte of the state is combined with a byte of the round
 		// key using bitwise xor.
 	for i := 0; i < 4; i++ {
-		w[i] = WordXOR(w[i], keys[i])
+		w[i] = wordXOR(w[i], keys[i])
 	}
 
 	// 9, 11 or 13 rounds:
@@ -248,7 +241,7 @@ func (code AESCode) blockEncrypt(bs_msg []byte) ([]byte) {
 
 		// AddRoundKey
 		for j := 0; j < 4; j++ {
-			w[j] = WordXOR(w[j], keys[4*round + j])
+			w[j] = wordXOR(w[j], keys[4*round + j])
 		}
 	}
 
@@ -262,24 +255,24 @@ func (code AESCode) blockEncrypt(bs_msg []byte) ([]byte) {
 
 	// AddRoundKey
 	for j := 0; j < 4; j++ {
-		w[j] = WordXOR(w[j], keys[4*(code.numberOfRounds-1) + j])
+		w[j] = wordXOR(w[j], keys[4*(code.numberOfRounds-1) + j])
 	}
 
-	return WordsToBytes(w[:])	
+	return wordsToBytes(w[:])	
 }
 
 // we run the encrypt process in reverse!
-func (code AESCode) blockDecrypt(bs_msg []byte) ([]byte) {
-	keys := code.keyExpansion()
+func (code AESCode) blockDecrypt(msg []byte) ([]byte) {
+	keys := code.keys
 
 	var w [4]Word
-	msgW := BytesToWords(bs_msg, false)
+	msgW := bytesToWords(msg, false)
 	copy(w[:], msgW[:])
 
 	// 'Final' round
 	// AddRoundKey
 	for j := 0; j < 4; j++ {
-		w[j] = WordXOR(w[j], keys[4*(code.numberOfRounds-1) + j])
+		w[j] = wordXOR(w[j], keys[4*(code.numberOfRounds-1) + j])
 	}
 
 	// ShiftRows
@@ -294,7 +287,7 @@ func (code AESCode) blockDecrypt(bs_msg []byte) ([]byte) {
 	for round := code.numberOfRounds-2; round > 0; round-- {
 		// AddRoundKey
 		for j := 0; j < 4; j++ {
-			w[j] = WordXOR(w[j], keys[4*round + j])
+			w[j] = wordXOR(w[j], keys[4*round + j])
 		}
 
 		// MixColumns – a linear mixing operation which operates on the columns of
@@ -318,8 +311,8 @@ func (code AESCode) blockDecrypt(bs_msg []byte) ([]byte) {
 	// AddRoundKey – each byte of the state is combined with a byte of the round
 	// key using bitwise xor.
 	for i := 0; i < 4; i++ {
-		w[i] = WordXOR(w[i], keys[i])
+		w[i] = wordXOR(w[i], keys[i])
 	}
 
-	return WordsToBytes(w[:])
+	return wordsToBytes(w[:])
 }
