@@ -39,7 +39,7 @@ func (rng *Mersenne19937) Seed(seed int) {
 
 	rng.MT[0] = uint32(seed)
 	for i := 1; i < rng.n; i++ {
-		rng.MT[i] = (f * (rng.MT[i - 1] ^ (rng.MT[i - 1] >> (rng.w - 2))) + i) & 0xFFFFFFFF
+		rng.MT[i] = (f * (rng.MT[i - 1] ^ (rng.MT[i - 1] >> (rng.w - 2))) + uint32(i)) & 0xFFFFFFFF
 	}
 	rng.index = rng.n
 }
