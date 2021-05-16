@@ -1,6 +1,7 @@
 package jmtcrypto
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -8,10 +9,10 @@ import (
 type Mersenne19937 struct {
 	w,n,m,r   int
 
-	MT      []int
+	MT      []uint32
 	index     int
-	lowerMask int
-	upperMask int
+	lowerMask uint32
+	upperMask uint32
 }
 
 // Mersenne19937Init - 
@@ -19,10 +20,10 @@ func Mersenne19937Init() *Mersenne19937 {
 	w, n, m, r := 32, 624, 397, 31
 
 	index := -1
-	MT := make([]int, n)
+	MT := make([]uint32, n)
 
-	lowerMask := (1 << r) - 1
-	upperMask := 0 
+	lowerMask := uint32(0x7fffffff)
+	upperMask := uint32(0x80000000)
 
 	return &Mersenne19937{w:w, n:n, m:m, r:r, MT:MT, index:index,
 	                      lowerMask:lowerMask, upperMask:upperMask}
@@ -34,13 +35,13 @@ func (rng *Mersenne19937) Seed(seed int) {
  		seed = int(time.Now().UnixNano())
 	}
 
-	f := 1812433253
+	f := uint32(1812433253)
 
-	rng.MT[0] = seed
+	rng.MT[0] = uint32(seed)
 	for i := 1; i < rng.n; i++ {
 		rng.MT[i] = (f * (rng.MT[i - 1] ^ (rng.MT[i - 1] >> (rng.w - 2))) + i) & 0xFFFFFFFF
 	}
-	rng.index = 0
+	rng.index = rng.n
 }
 
 // Next - 
@@ -60,12 +61,13 @@ func (rng *Mersenne19937) Next() int {
 	// mersenne19937 returns 32-bit values
 	y &= 0xFFFFFFFF
 
-	return y
+	return int(y)
 }
 
 
 func (rng *Mersenne19937) twist() {
-	a := 0x9908B0DF
+	fmt.Println("twist!")
+	a := uint32(0x9908B0DF)
 	for i := 0; i < rng.n; i++ {
 		x := (rng.MT[i] & rng.upperMask) + (rng.MT[(i+1) % rng.n] & rng.lowerMask)
 		xA := x >> 1
@@ -108,7 +110,7 @@ func UnTwist(y int) int {
 }
 
 // Splice - 
-func (rng *Mersenne19937) Splice(arr []int) {
+func (rng *Mersenne19937) Splice(arr []uint32) {
 	rng.MT = arr
 	rng.index = 0
 }
