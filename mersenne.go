@@ -1,7 +1,6 @@
 package jmtcrypto
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -66,7 +65,6 @@ func (rng *Mersenne19937) Next() int {
 
 
 func (rng *Mersenne19937) twist() {
-	fmt.Println("twist!")
 	a := uint32(0x9908B0DF)
 	for i := 0; i < rng.n; i++ {
 		x := (rng.MT[i] & rng.upperMask) + (rng.MT[(i+1) % rng.n] & rng.lowerMask)
