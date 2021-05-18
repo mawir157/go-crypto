@@ -283,11 +283,12 @@ func incrementCTR(counter []byte) []byte {
 	counter[pos]++
 	for counter[pos] == 0 {
 		pos++
-		counter[pos]++
 
-		if pos > len(counter) {
-			pos = len(counter) - 1
+		if pos == len(counter) {
+			break
 		}
+
+		counter[pos]++
 	}
 
 	return counter

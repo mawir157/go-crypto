@@ -56,8 +56,8 @@ func ParseFromHex(s string, pad bool) ([]byte, error) {
 		padValue := byte(16 - (len(data) % 16)) % 16
 		for i := byte(0); i < padValue; i++ {
 			data = append(data, padValue)
-		}		
-	}	
+		}
+	}
 
 	return data, nil
 }
@@ -96,9 +96,9 @@ func bytesToWords(data []byte, pad bool) (parsed []Word) {
 
 		for i := byte(0); i < padValue; i++ {
 			data = append(data, padValue)
-		}			
+		}
 	}
-	
+
 	for i := 0; i < len(data); i += 4 {
 		parsed = append( parsed, Word{data[i], data[i+1], data[i+2], data[i+3]} )
 	}
