@@ -15,7 +15,7 @@ func matchSlices(arr1, arr2 []byte) bool {
 
 func allZero(arr []byte) bool {
 	for _, v := range arr {
-		if 0x00 != v {
+		if v != 0x00 {
 			return false
 		}
 	}
@@ -29,16 +29,15 @@ func ReverseHash(initial, target []byte, h HashFunction) []byte {
 	}
 
 	test := h.Hash(initial)
-	if (matchSlices(target[:n], test[:n])) {
+	if matchSlices(target[:n], test[:n]) {
 		return initial
 	}
 
-
 	counter := []byte{0x00}
-	for ; true ; {
+	for {
 		temp := append(initial, counter...)
 		test = h.Hash(temp)
-		if (matchSlices(target[:n], test[:n])) {
+		if matchSlices(target[:n], test[:n]) {
 			fmt.Printf("added %d bytes\n", len(counter))
 			return temp
 		}
@@ -47,6 +46,4 @@ func ReverseHash(initial, target []byte, h HashFunction) []byte {
 			counter = append(counter, 0x00)
 		}
 	}
-	
-	return nil
 }
