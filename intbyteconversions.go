@@ -6,6 +6,11 @@ func rightRotate[T uint32 | uint64](i T, n int, size int) T {
 	return (i << (size - n)) + (i >> n)
 }
 
+// TODO
+func rightRotate128(i uint128, n int) uint128 {
+	return (i << (size - n)) + (i >> n)
+}
+
 func leftRotate[T uint32 | uint64](i T, n int, size int) T {
 	return (i >> (size - n)) + (i << n)
 }
@@ -115,4 +120,42 @@ func intSliceToBytes(arr []uint32, be bool) []byte {
 	}
 
 	return out
+}
+
+func bytesToInt128(arr []byte, be bool) (uint128, error) {
+	if len(arr) != 16 {
+		return [2]uint64{0, 0}, errors.New("not 16 bytes")
+	}
+
+	value := [2]uint64{0, 0}
+
+	if be {
+		for i, v := range arr {
+			value[i/8] <<= 8
+			value[i/8] += uint64(v)
+		}
+	} else {
+		for i := 7; i >= 0; i-- {
+			value[i/8] <<= 8
+			value[i/8] += uint64(arr[i])
+		}
+	}
+
+	return value, nil
+}
+
+func int128ToBytes(l uint128, be bool) []byte {
+	bytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	for i := 0; i < 16; i++ {
+		q := byte(l[i/16] & 0xff)
+		if be {
+			bytes[15-i] = q
+		} else {
+			bytes[i] = q
+		}
+		l[i/16] >>= 8
+	}
+
+	return bytes
 }

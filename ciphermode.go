@@ -1,25 +1,28 @@
 package jmtcrypto
 
-// CipherMode - 
+// CipherMode -
 type CipherMode int
+
 const (
-	// ECB -
-	ECB    CipherMode = iota
-	// CBC -
+	// ECB - Electronic CookBook
+	ECB CipherMode = iota
+	// CBC - Cipher Block Chaining
 	CBC
-	// PCB -
+	// PCB - Propagating Cipher Block Chaining
 	PCB
-	// OFB -
+	// OFB - Output FeedBack
 	OFB
-	// CTR - 
+	// CTR - Counter
 	CTR
-	// CFB -
+	// CFB - Cipher FeedBack
 	CFB
-	// PRNGSTREAM - 
+	// PRNGSTREAM -
 	PRNGSTREAM
+	// GCM - Galois/Counter Mode
+	GCM
 )
 
-// BlockCipher - 
+// BlockCipher -
 type BlockCipher interface {
 	blockEncrypt(plaintext []byte) []byte
 	blockDecrypt(cipherText []byte) []byte
@@ -42,11 +45,11 @@ func byteStreamXOR(bs1, bs2 []byte) (bs3 []byte) {
 //
 
 // ECBEncrypt - Electronic Codebook (ECB)
-func ECBEncrypt(bc BlockCipher, msg []byte) ([]byte) {
+func ECBEncrypt(bc BlockCipher, msg []byte) []byte {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
-		eBlock := bc.blockEncrypt(msg[i:i+bc.BlockSize()])
+		eBlock := bc.blockEncrypt(msg[i : i+bc.BlockSize()])
 		out = append(out, eBlock...)
 	}
 
@@ -58,7 +61,7 @@ func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
-		eBlock := bc.blockDecrypt(msg[i:i+bc.BlockSize()])
+		eBlock := bc.blockDecrypt(msg[i : i+bc.BlockSize()])
 		out = append(out, eBlock...)
 	}
 
@@ -76,7 +79,7 @@ func ECBDecrypt(bc BlockCipher, msg []byte) ([]byte, error) {
 //
 
 // CBCEncrypt -
-func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) []byte {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
@@ -91,17 +94,17 @@ func CBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
-// CBCDecrypt - 
+// CBCDecrypt -
 func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
-		eBlock := bc.blockDecrypt(msg[i:i+bc.BlockSize()])
+		eBlock := bc.blockDecrypt(msg[i : i+bc.BlockSize()])
 
 		block := byteStreamXOR(eBlock, iv)
 		out = append(out, block...)
 
-		iv = msg[i:i+bc.BlockSize()]
+		iv = msg[i : i+bc.BlockSize()]
 	}
 
 	err := validatePad(out)
@@ -116,8 +119,8 @@ func CBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 // Propagating cipher block chaining (PCBC)
 //
 
-// PCBCEncrypt - 
-func PCBCEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+// PCBCEncrypt -
+func PCBCEncrypt(bc BlockCipher, iv []byte, msg []byte) []byte {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
@@ -137,7 +140,7 @@ func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
-		eBlock := bc.blockDecrypt(msg[i:i+bc.BlockSize()])
+		eBlock := bc.blockDecrypt(msg[i : i+bc.BlockSize()])
 		block := byteStreamXOR(iv, eBlock)
 
 		out = append(out, block...)
@@ -159,7 +162,7 @@ func PCBCDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 //
 
 // OFBEncrypt -
-func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) []byte {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
@@ -174,8 +177,7 @@ func OFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
-
-// OFBDecrypt - 
+// OFBDecrypt -
 func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -201,13 +203,13 @@ func OFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 // Cipher feedback (CFB)
 //
 
-// CFBEncrypt - 
-func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
+// CFBEncrypt -
+func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) []byte {
 	out := []byte{}
 
 	for i := 0; i < len(msg); i += bc.BlockSize() {
 		eBlock := bc.blockEncrypt(iv)
-		
+
 		eBlock = byteStreamXOR(msg[i:i+bc.BlockSize()], eBlock)
 
 		iv = eBlock
@@ -218,7 +220,7 @@ func CFBEncrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte) {
 	return out
 }
 
-// CFBDecrypt - 
+// CFBDecrypt -
 func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 	out := []byte{}
 
@@ -227,7 +229,7 @@ func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 
 		eBlock = byteStreamXOR(msg[i:i+bc.BlockSize()], eBlock)
 
-		iv = msg[i:i+bc.BlockSize()]
+		iv = msg[i : i+bc.BlockSize()]
 
 		out = append(out, eBlock...)
 	}
@@ -245,9 +247,9 @@ func CFBDecrypt(bc BlockCipher, iv []byte, msg []byte) ([]byte, error) {
 // Counter (CTR)
 //
 
-// CTREncrypt - 
-func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
-	counter := []byte{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}
+// CTREncrypt -
+func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) []byte {
+	counter := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	out := []byte{}
 
 	// add extra byte to end so we can go process in blocks
@@ -270,8 +272,69 @@ func CTREncrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte) {
 	return out[:msgLen]
 }
 
-// CTRDecrypt - 
+// CTRDecrypt -
 func CTRDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {
+	out := CTREncrypt(bc, nonce, msg)
+
+	return out, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Galois/Counte Mode (GCM)
+//
+
+// GCMEncrypt -
+func GCMEncrypt(bc BlockCipher, nonce []byte, msg []byte, authData []byte, H []byte) ([]byte, []byte) {
+	if bc.BlockSize() != 16 {
+		panic("")
+	}
+	counter := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	eBlock0 := bc.blockEncrypt(counter)
+	counter = incrementCTR(counter)
+	cipherText := []byte{}
+	authTag := []byte{}
+
+	// add extra byte to end so we can go process in blocks
+	msgLen := len(msg)
+	n := 16 - (msgLen % 16)
+	pad := make([]byte, n)
+	msg = append(msg, pad...)
+
+	rollingBlock := galoisMultiply(authData, H)
+
+	for i := 0; i < len(msg)-bc.BlockSize(); i += bc.BlockSize() {
+		eBlock := bc.blockEncrypt(counter)
+		eBlock = byteStreamXOR(msg[i:i+bc.BlockSize()], eBlock)
+
+		cipherText = byteStreamXOR(msg[i:i+bc.BlockSize()], rollingBlock)
+		eBlock = galoisMultiply(eBlock, H)
+
+		cipherText = append(cipherText, eBlock...)
+		rollingBlock = eBlock
+
+		counter = incrementCTR(counter)
+	}
+
+	// final block
+	{
+		blockStart, blockEnd := len(msg)-bc.BlockSize(), len(msg)
+		eBlock := bc.blockEncrypt(counter)
+		eBlock = byteStreamXOR(msg[blockStart:blockEnd], eBlock)
+		eBlock = galoisMultiply(eBlock, H)
+		final := []byte{} // WORK OUT WHT NEEDS TO HAPPEN HERE len(authData) || len(cipherText)
+		eBlock = byteStreamXOR(eBlock, final)
+		eBlock = galoisMultiply(eBlock, H)
+		eBlock = byteStreamXOR(eBlock, eBlock0)
+
+		cipherText = append(cipherText, eBlock...)
+	}
+
+	return cipherText[:msgLen], authTag
+}
+
+// GCMDecrypt -
+func GCMDecrypt(bc BlockCipher, nonce []byte, msg []byte) ([]byte, error) {
 	out := CTREncrypt(bc, nonce, msg)
 
 	return out, nil
