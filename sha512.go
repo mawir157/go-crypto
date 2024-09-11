@@ -1,6 +1,6 @@
 package jmtcrypto
 
-// SHA256 -
+// SHA512 -
 type SHA512 struct {
 	sizeBits int
 	rounds   int
@@ -8,7 +8,7 @@ type SHA512 struct {
 	kArr     [80]uint64
 }
 
-// MakeSHA256 -
+// MakeSHA512 -
 func MakeSHA512() SHA512 {
 	// Initialize the hash
 	hArr := [8]uint64{0x6a09e667f3bcc908, 0xbb67ae8584caa73b,

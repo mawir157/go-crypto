@@ -2,13 +2,18 @@ package jmtcrypto
 
 import "errors"
 
+type Uint128 [2]uint64 // x = x[0] * 2^64 + x[1]
+
 func rightRotate[T uint32 | uint64](i T, n int, size int) T {
 	return (i << (size - n)) + (i >> n)
 }
 
 // TODO
-func rightRotate128(i uint128, n int) uint128 {
-	return (i << (size - n)) + (i >> n)
+func RightRotate128(i Uint128, n int) Uint128 {
+	j0, j1 := (i[0] << (64 - n)), (i[0] >> n)
+	k0, k1 := (i[1] << (64 - n)), (i[1] >> n)
+
+	return Uint128{j0 + k1, j1 + k0}
 }
 
 func leftRotate[T uint32 | uint64](i T, n int, size int) T {
@@ -51,6 +56,21 @@ func intTo8Bytes(l int, be bool) []byte {
 		q := byte(l & 0xff)
 		if be {
 			bytes[7-i] = q
+		} else {
+			bytes[i] = q
+		}
+		l >>= 8
+	}
+
+	return bytes
+}
+
+func uint64To16Bytes(l uint64, be bool) []byte {
+	bytes := make([]byte, 16)
+	for i := 0; i < 16; i++ {
+		q := byte(l & 0xff)
+		if be {
+			bytes[15-i] = q
 		} else {
 			bytes[i] = q
 		}
@@ -113,6 +133,19 @@ func bytesToIntSlice(arr []byte, be bool) ([]uint32, error) {
 	return out, nil
 }
 
+func bytesToInt64Slice(arr []byte, be bool) ([]uint64, error) {
+	out := []uint64{}
+	for i := 0; i < len(arr); i += 8 {
+		b, err := bytesToInt64(arr[i:i+8], be)
+		if err != nil {
+			return out, err
+		}
+		out = append(out, b)
+	}
+
+	return out, nil
+}
+
 func intSliceToBytes(arr []uint32, be bool) []byte {
 	out := []byte{}
 	for _, i32 := range arr {
@@ -122,7 +155,7 @@ func intSliceToBytes(arr []uint32, be bool) []byte {
 	return out
 }
 
-func bytesToInt128(arr []byte, be bool) (uint128, error) {
+func BytesToInt128(arr []byte, be bool) (Uint128, error) {
 	if len(arr) != 16 {
 		return [2]uint64{0, 0}, errors.New("not 16 bytes")
 	}
@@ -144,17 +177,17 @@ func bytesToInt128(arr []byte, be bool) (uint128, error) {
 	return value, nil
 }
 
-func int128ToBytes(l uint128, be bool) []byte {
+func Int128ToBytes(l Uint128, be bool) []byte {
 	bytes := []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 	for i := 0; i < 16; i++ {
-		q := byte(l[i/16] & 0xff)
+		q := byte(l[i/8] & 0xff)
 		if be {
 			bytes[15-i] = q
 		} else {
 			bytes[i] = q
 		}
-		l[i/16] >>= 8
+		l[i/8] >>= 8
 	}
 
 	return bytes
