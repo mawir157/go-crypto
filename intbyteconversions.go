@@ -65,12 +65,12 @@ func intTo8Bytes(l int, be bool) []byte {
 	return bytes
 }
 
-func uint64To16Bytes(l uint64, be bool) []byte {
-	bytes := make([]byte, 16)
-	for i := 0; i < 16; i++ {
+func uint64To8Bytes(l uint64, be bool) []byte {
+	bytes := make([]byte, 8)
+	for i := 0; i < 8; i++ {
 		q := byte(l & 0xff)
 		if be {
-			bytes[15-i] = q
+			bytes[7-i] = q
 		} else {
 			bytes[i] = q
 		}
