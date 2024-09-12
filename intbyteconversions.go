@@ -55,6 +55,21 @@ func intTo8Bytes(l int, be bool) []byte {
 	return bytes
 }
 
+func uint64To8Bytes(l uint64, be bool) []byte {
+	bytes := make([]byte, 8)
+	for i := 0; i < 8; i++ {
+		q := byte(l & 0xff)
+		if be {
+			bytes[7-i] = q
+		} else {
+			bytes[i] = q
+		}
+		l >>= 8
+	}
+
+	return bytes
+}
+
 func bytesToInt32(arr []byte, be bool) (uint32, error) {
 	if len(arr) != 4 {
 		return 0, errors.New("not 4 bytes")

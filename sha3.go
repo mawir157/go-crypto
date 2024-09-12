@@ -79,7 +79,7 @@ func (hC SHA3) round(A [25]uint64, rc uint64) [25]uint64 {
 		C[x] = A[hC.ind(x, 0)] ^ A[hC.ind(x, 1)] ^ A[hC.ind(x, 2)] ^ A[hC.ind(x, 3)] ^ A[hC.ind(x, 3)] // is this right?
 	}
 	for x := 0; x < 5; x++ {
-		D[x] = C[x-1] ^ rightRotate(C[x+1], 1, 64)
+		D[x] = C[(x+4)%5] ^ rightRotate(C[(x+1)%5], 1, 64)
 	}
 	for x := 0; x < 5; x++ {
 		for y := 0; y < 5; y++ {
@@ -120,17 +120,17 @@ func (hC SHA3) pad(data []byte) []uint64 {
 	// which is bk bytes
 	bk := K / 8
 	padded := data
-	padded = append(padded, 0x80)
+	padded = append(padded, 0x06)
 	for i := 1; i < bk-1; i++ {
 		padded = append(padded, 0x00)
 	}
-	padded = append(padded, 0x01)
+	padded = append(padded, 0x80)
 
 	if (8*len(padded))%hC.r != 0 {
 		panic("SHA3 padding failed")
 	}
 
-	intArr, _ := bytesToInt64Slice(padded, true)
+	intArr, _ := bytesToInt64Slice(padded, false)
 	return intArr
 }
 
@@ -156,11 +156,12 @@ func (hC SHA3) Hash(data []byte) []byte {
 	// squeezing phase
 	out := []byte{}
 	for 8*len(out) < hC.sizeBits {
-		for _, v := range hC.S {
-			bs := uint64To16Bytes(v, true)
+		for i := 0; i < hC.r/w; i++ {
+			// for _, v := range hC.S {
+			bs := uint64To8Bytes(hC.S[i], true)
 			out = append(out, bs...)
 		}
 		hC.S = hC.keccak(hC.S)
 	}
-	return out
+	return out[:(hC.sizeBits / 8)]
 }
