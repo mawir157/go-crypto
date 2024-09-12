@@ -71,8 +71,8 @@ func (hC SHA3) keccak(A [25]uint64) [25]uint64 {
 
 func (hC SHA3) round(A [25]uint64, rc uint64) [25]uint64 {
 	B := make([]uint64, 25)
-	C := []uint64{0, 0, 0, 0, 0}
-	D := []uint64{0, 0, 0, 0, 0}
+	C := make([]uint64, 5)
+	D := make([]uint64, 5)
 
 	// theta step
 	for x := 0; x < 5; x++ {
@@ -107,9 +107,31 @@ func (hC SHA3) round(A [25]uint64, rc uint64) [25]uint64 {
 	return A
 }
 
-// TODO
-func (hC SHA3) pad(data []byte) [][25]uint64 {
-	return [][25]uint64{}
+// Pad with 1000..0001 until hC.r bits long
+func (hC SHA3) pad(data []byte) []uint64 {
+	// k := len(data) // have k bytes = 8*k bits
+	// 8k + s == 0 mod r
+	K := 1
+	// temporary place holder while I check how mod behaves w/ -ve numbers
+	for ; (8*len(data)+K)%hC.r != 0; K++ {
+		//
+	}
+	//need to add K bits
+	// which is bk bytes
+	bk := K / 8
+	padded := data
+	padded = append(padded, 0x80)
+	for i := 1; i < bk-1; i++ {
+		padded = append(padded, 0x00)
+	}
+	padded = append(padded, 0x01)
+
+	if (8*len(padded))%hC.r != 0 {
+		panic("SHA3 padding failed")
+	}
+
+	intArr, _ := bytesToInt64Slice(padded, true)
+	return intArr
 }
 
 // Hash -
@@ -117,21 +139,15 @@ func (hC SHA3) Hash(data []byte) []byte {
 	w := 64
 	p := hC.pad(data)
 
-	// Initilise state
+	// Initilise state array to 0
 	hC.S = [25]uint64{}
 
 	// absorb step
-	for _, pi := range p {
-		// pi is a [25]uint64
-		// XOR the message part of pi into S
-		for x := 0; x < 5; x++ {
-			for y := 0; y < 5; y++ {
-				if x+5*y >= hC.r/w {
-					continue
-				} else {
-					hC.S[hC.ind(x, y)] ^= pi[hC.ind(x, y)]
-				}
-			}
+	// grab hC.r/w values from padded message...
+	for offset := 0; offset < len(p); offset += hC.r / w {
+		for i := 0; i < hC.r/w; i++ {
+			//.. write them into the state array S
+			hC.S[i] ^= p[i+offset]
 		}
 		// Apply the Keccak function to S
 		hC.S = hC.keccak(hC.S)
