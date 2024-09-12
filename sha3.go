@@ -20,9 +20,9 @@ var RC = [24]uint64{
 var rot = [25]int{
 	0, 1, 62, 28, 27,
 	36, 44, 6, 55, 20,
-	25, 39, 3, 10, 43,
-	21, 8, 41, 45, 15,
-	56, 14, 18, 2, 61,
+	3, 10, 43, 25, 39,
+	41, 45, 15, 21, 8,
+	18, 2, 61, 56, 14,
 }
 
 // SHA512 -
@@ -76,10 +76,10 @@ func (hC SHA3) round(A [25]uint64, rc uint64) [25]uint64 {
 
 	// theta step
 	for x := 0; x < 5; x++ {
-		C[x] = A[hC.ind(x, 0)] ^ A[hC.ind(x, 1)] ^ A[hC.ind(x, 2)] ^ A[hC.ind(x, 3)] ^ A[hC.ind(x, 3)] // is this right?
+		C[x] = A[hC.ind(x, 0)] ^ A[hC.ind(x, 1)] ^ A[hC.ind(x, 2)] ^ A[hC.ind(x, 3)] ^ A[hC.ind(x, 4)] // is this right?
 	}
 	for x := 0; x < 5; x++ {
-		D[x] = C[(x+4)%5] ^ rightRotate(C[(x+1)%5], 1, 64)
+		D[x] = C[(x+4)%5] ^ leftRotate(C[(x+1)%5], 1, 64)
 	}
 	for x := 0; x < 5; x++ {
 		for y := 0; y < 5; y++ {
@@ -90,7 +90,7 @@ func (hC SHA3) round(A [25]uint64, rc uint64) [25]uint64 {
 	// rho and pi step
 	for x := 0; x < 5; x++ {
 		for y := 0; y < 5; y++ {
-			B[hC.ind(y, 2*x+3*y)] = rightRotate(A[hC.ind(x, y)], rot[hC.ind(x, y)], 64)
+			B[hC.ind(y, 2*x+3*y)] = leftRotate(A[hC.ind(x, y)], rot[hC.ind(x, y)], 64)
 		}
 	}
 
@@ -158,7 +158,7 @@ func (hC SHA3) Hash(data []byte) []byte {
 	for 8*len(out) < hC.sizeBits {
 		for i := 0; i < hC.r/w; i++ {
 			// for _, v := range hC.S {
-			bs := uint64To8Bytes(hC.S[i], true)
+			bs := uint64To8Bytes(hC.S[i], false)
 			out = append(out, bs...)
 		}
 		hC.S = hC.keccak(hC.S)
