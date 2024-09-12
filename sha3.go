@@ -1,13 +1,5 @@
 package jmtcrypto
 
-var state_64 = [25]uint64{
-	0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0,
-}
-
 var RC = [24]uint64{
 	0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000,
 	0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
@@ -28,29 +20,30 @@ var rot = [25]int{
 // SHA512 -
 type SHA3 struct {
 	sizeBits int
-	r, c     int
+	r        int
+	c        int
 	rounds   int
 	S        [25]uint64
 }
 
 // Make SHA3-224
 func MakeSHA3_224() SHA3 {
-	return SHA3{sizeBits: 224, r: 1152, c: 448, rounds: 24, S: state_64}
+	return SHA3{sizeBits: 224, r: 1152, c: 448, rounds: 24, S: [25]uint64{}}
 }
 
 // Make SHA3-256
 func MakeSHA3_256() SHA3 {
-	return SHA3{sizeBits: 256, r: 1088, c: 512, rounds: 24, S: state_64}
+	return SHA3{sizeBits: 256, r: 1088, c: 512, rounds: 24, S: [25]uint64{}}
 }
 
 // Make SHA3-384
 func MakeSHA3_384() SHA3 {
-	return SHA3{sizeBits: 384, r: 832, c: 768, rounds: 24, S: state_64}
+	return SHA3{sizeBits: 384, r: 832, c: 768, rounds: 24, S: [25]uint64{}}
 }
 
 // Make SHA3-512
 func MakeSHA3_512() SHA3 {
-	return SHA3{sizeBits: 512, r: 576, c: 1024, rounds: 24, S: state_64}
+	return SHA3{sizeBits: 512, r: 576, c: 1024, rounds: 24, S: [25]uint64{}}
 }
 
 // Size -
